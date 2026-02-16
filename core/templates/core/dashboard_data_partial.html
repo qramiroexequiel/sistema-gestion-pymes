@@ -1,0 +1,99 @@
+{{ chart_sales_vs_purchases|json_script:"chartSalesVsPurchasesData" }}
+{{ chart_top_customers|json_script:"chartTopCustomersData" }}
+
+<!-- KPIs (periodo seleccionado) -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <h6 class="text-muted mb-1">Total Ventas</h6>
+                        <h3 class="mb-0">${{ period_sales|floatformat:2|default:"0.00" }}</h3>
+                    </div>
+                    <div style="font-size: 2.5rem; color: var(--accent-success); opacity: 0.6;">
+                        <i class="fas fa-arrow-trend-up"></i>
+                    </div>
+                </div>
+                <small class="text-muted">{{ period_label }} — {{ period_operations|default:0 }} operación{{ period_operations|pluralize:"es" }} confirmada{{ period_operations|pluralize:"s" }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <h6 class="text-muted mb-1">Total Compras</h6>
+                        <h3 class="mb-0">${{ period_purchases|floatformat:2|default:"0.00" }}</h3>
+                    </div>
+                    <div style="font-size: 2.5rem; color: var(--accent-info); opacity: 0.6;">
+                        <i class="fas fa-arrow-trend-down"></i>
+                    </div>
+                </div>
+                <small class="text-muted">{{ period_label }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <h6 class="text-muted mb-1">Clientes</h6>
+                        <h3 class="mb-0">{{ active_customers|default:0 }}</h3>
+                    </div>
+                    <div style="font-size: 2.5rem; color: var(--accent-primary); opacity: 0.6;">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+                <small class="text-muted">clientes activos</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <h6 class="text-muted mb-1">Productos</h6>
+                        <h3 class="mb-0">{{ active_products|default:0 }}</h3>
+                    </div>
+                    <div style="font-size: 2.5rem; color: var(--accent-warning); opacity: 0.6;">
+                        <i class="fas fa-box"></i>
+                    </div>
+                </div>
+                <small class="text-muted">productos activos</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos -->
+<div class="row g-4 mb-5">
+    <div class="col-12">
+        <h5 class="mb-3" style="font-weight: 600; color: var(--text-secondary); font-size: 0.9375rem; text-transform: uppercase; letter-spacing: 0.05em;">Análisis de Negocio</h5>
+    </div>
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 pt-3 pb-2">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Ventas vs Compras ({{ period_label }})</h5>
+                <small class="text-muted">Totales diarios de operaciones confirmadas — montos en $ ARS</small>
+            </div>
+            <div class="card-body pt-2">
+                <canvas id="chartSalesVsPurchases" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 pt-3 pb-2">
+                <h5 class="mb-0"><i class="fas fa-user-tie me-2"></i>Top 5 Clientes</h5>
+                <small class="text-muted">Por volumen de ventas ($ ARS) — {{ period_label }}</small>
+            </div>
+            <div class="card-body pt-2">
+                <canvas id="chartTopCustomers" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>

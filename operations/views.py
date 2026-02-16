@@ -18,6 +18,7 @@ from core.constants import ROLE_ADMIN, ROLE_MANAGER, ROLE_OPERATOR
 from core.utils.csv_export import export_csv_response
 from core.utils import log_audit
 from core.utils.request import get_client_ip
+from core.utils.security_services import check_anomalous_behavior
 from operations.services import (
     create_operation,
     recalculate_operation_totals,
@@ -265,19 +266,18 @@ class OperationConfirmView(
         
         try:
             confirm_operation(operation, user=request.user)
-            
-            # Auditoría: registrar confirmación
             log_audit(
                 company=self.get_company(),
                 user=request.user,
-                action='confirm',
+                action='update',
                 model_name='Operation',
                 object_id=operation.pk,
                 changes={'status': 'confirmed'},
                 ip_address=get_client_ip(request)
             )
-            
             messages.success(request, f'Operación "{operation.number}" confirmada correctamente.')
+        except ValidationError as e:
+            messages.error(request, str(e))
         except Exception as e:
             messages.error(request, f'Error al confirmar operación: {str(e)}')
         
@@ -321,13 +321,13 @@ class OperationCancelView(
             log_audit(
                 company=self.get_company(),
                 user=request.user,
-                action='cancel',
+                action='update',
                 model_name='Operation',
                 object_id=operation.pk,
                 changes={'status': 'cancelled'},
                 ip_address=get_client_ip(request)
             )
-            
+            check_anomalous_behavior(request.user, self.get_company())
             messages.success(request, f'Operación "{operation.number}" cancelada correctamente.')
         except Exception as e:
             messages.error(request, f'Error al cancelar operación: {str(e)}')

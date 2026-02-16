@@ -15,6 +15,9 @@ crispy-bootstrap5>=0.7
 # Image handling
 Pillow>=10.0.0
 
+# PDF export (dashboard report)
+xhtml2pdf>=0.2.13
+
 # Production
 gunicorn>=21.2.0
 whitenoise>=6.6.0

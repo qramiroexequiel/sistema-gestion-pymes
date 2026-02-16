@@ -76,8 +76,9 @@ class AuditLog(models.Model):
         ('view', 'Ver'),
         ('login', 'Iniciar sesión'),
         ('logout', 'Cerrar sesión'),
+        ('security_alert', 'Alerta de seguridad'),
     ]
-    
+
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='audit_logs')
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='audit_logs')
     action = models.CharField('Acción', max_length=20, choices=ACTION_CHOICES)

@@ -3,6 +3,10 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
+<style>
+#dashboard-spinner.htmx-indicator { opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
+#dashboard-spinner.htmx-indicator.htmx-request { opacity: 1; pointer-events: auto; }
+</style>
 <!-- Section Header -->
 <div class="section-header">
     <div class="section-header-left">
@@ -19,87 +23,157 @@
 </div>
 {% endif %}
 
-<!-- KPIs Principales -->
-<div class="row g-4 mb-4">
-    <!-- Total Ventas Históricas -->
-    <div class="col-lg-3 col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div>
-                        <h6 class="text-muted mb-1">Total Ventas</h6>
-                        <h3 class="mb-0 d-flex align-items-center flex-wrap gap-2">
-                            ${{ total_sales|floatformat:2|default:"0.00" }}
-                            {% if ventas_tendencia is not None %}
-                            <span class="badge {% if ventas_tendencia > 0 %}bg-success{% elif ventas_tendencia < 0 %}bg-danger{% else %}bg-secondary{% endif %} py-1 px-2" style="font-size: 0.7rem; font-weight: 600;">
-                                {% if ventas_tendencia > 0 %}<i class="fas fa-arrow-up me-1"></i>{% elif ventas_tendencia < 0 %}<i class="fas fa-arrow-down me-1"></i>{% endif %}
-                                {{ ventas_tendencia }}% vs mes anterior
-                            </span>
-                            {% endif %}
-                        </h3>
+<!-- Alertas de Seguridad (solo si hay alertas y usuario ADMIN) -->
+{% if security_alerts %}
+<div class="alert border-0 mb-4 shadow-sm" style="background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border-left: 4px solid #D97706;">
+    <h6 class="alert-heading mb-2" style="color: #92400E; font-weight: 700;">
+        <i class="fas fa-shield-alt me-2"></i>Alertas de Seguridad
+    </h6>
+    <ul class="mb-0 ps-3" style="color: #78350F;">
+        {% for log in security_alerts %}
+        <li class="mb-1">
+            <strong>{{ log.changes.alert_type|default:"SECURITY_ALERT" }}</strong>
+            {% if log.changes.from_ip %} — IP {{ log.changes.from_ip }} → {{ log.changes.to_ip }}{% endif %}
+            {% if log.changes.count %} — {{ log.changes.count }} acciones en 10 min{% endif %}
+            <small class="text-muted d-block">{{ log.timestamp|date:"d/m/Y H:i" }}{% if log.user %} · {{ log.user.username }}{% endif %}</small>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<!-- Filtro de período (HTMX) y exportación PDF -->
+<div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+    <label class="text-muted small mb-0 me-2">Período:</label>
+    <select id="dashboard-period-select" name="period" class="form-select form-select-sm" style="width: auto; max-width: 12rem;"
+            hx-get="{% url 'core:dashboard_data' %}"
+            hx-trigger="change"
+            hx-target="#dashboard-data"
+            hx-swap="innerHTML"
+            hx-indicator="#dashboard-spinner"
+            hx-include="[name='period']">
+        <option value="7d" {% if period == '7d' %}selected{% endif %}>Últimos 7 días</option>
+        <option value="this_month" {% if period == 'this_month' %}selected{% endif %}>Este Mes</option>
+        <option value="last_month" {% if period == 'last_month' %}selected{% endif %}>Mes Pasado</option>
+    </select>
+    <a href="{% url 'core:dashboard_pdf_export' %}?period=this_month" id="dashboard-pdf-link" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-file-pdf me-1"></i>Descargar Reporte PDF
+    </a>
+</div>
+
+<div id="dashboard-data" class="position-relative">
+    <div id="dashboard-spinner" class="htmx-indicator position-absolute top-0 start-0 end-0 bottom-0 d-flex align-items-center justify-content-center rounded" style="background: rgba(255,255,255,0.85); z-index: 10;">
+        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando…</span></div>
+    </div>
+
+    <!-- KPIs Principales (según período) -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <h6 class="text-muted mb-1">Total Ventas</h6>
+                            <h3 class="mb-0 d-flex align-items-center flex-wrap gap-2">
+                                ${{ period_sales|floatformat:2|default:"0.00" }}
+                                {% if ventas_tendencia is not None %}
+                                <span class="badge {% if ventas_tendencia > 0 %}bg-success{% elif ventas_tendencia < 0 %}bg-danger{% else %}bg-secondary{% endif %} py-1 px-2" style="font-size: 0.7rem; font-weight: 600;">
+                                    {% if ventas_tendencia > 0 %}<i class="fas fa-arrow-up me-1"></i>{% elif ventas_tendencia < 0 %}<i class="fas fa-arrow-down me-1"></i>{% endif %}
+                                    {{ ventas_tendencia }}% vs mes anterior
+                                </span>
+                                {% endif %}
+                            </h3>
+                        </div>
+                        <div style="font-size: 2.5rem; color: var(--accent-success); opacity: 0.6;">
+                            <i class="fas fa-arrow-trend-up"></i>
+                        </div>
                     </div>
-                    <div style="font-size: 2.5rem; color: var(--accent-success); opacity: 0.6;">
-                        <i class="fas fa-arrow-trend-up"></i>
-                    </div>
+                    <small class="text-muted">{{ period_label }} — {{ period_operations|default:0 }} operación{{ period_operations|pluralize:"es" }} confirmada{{ period_operations|pluralize:"s" }}</small>
                 </div>
-                <small class="text-muted">{{ total_operations|default:0 }} operación{{ total_operations|pluralize:"es" }} confirmada{{ total_operations|pluralize:"s" }}</small>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <h6 class="text-muted mb-1">Total Compras</h6>
+                            <h3 class="mb-0">${{ period_purchases|floatformat:2|default:"0.00" }}</h3>
+                        </div>
+                        <div style="font-size: 2.5rem; color: var(--accent-info); opacity: 0.6;">
+                            <i class="fas fa-arrow-trend-down"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">{{ period_label }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <h6 class="text-muted mb-1">Clientes</h6>
+                            <h3 class="mb-0">{{ active_customers|default:0 }}</h3>
+                        </div>
+                        <div style="font-size: 2.5rem; color: var(--accent-primary); opacity: 0.6;">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">clientes activos</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <h6 class="text-muted mb-1">Productos</h6>
+                            <h3 class="mb-0">{{ active_products|default:0 }}</h3>
+                        </div>
+                        <div style="font-size: 2.5rem; color: var(--accent-warning); opacity: 0.6;">
+                            <i class="fas fa-box"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">productos activos</small>
+                </div>
             </div>
         </div>
     </div>
-    
-    <!-- Total Compras Históricas -->
-    <div class="col-lg-3 col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div>
-                        <h6 class="text-muted mb-1">Total Compras</h6>
-                        <h3 class="mb-0">${{ total_purchases|floatformat:2|default:"0.00" }}</h3>
-                    </div>
-                    <div style="font-size: 2.5rem; color: var(--accent-info); opacity: 0.6;">
-                        <i class="fas fa-arrow-trend-down"></i>
-                    </div>
-                </div>
-                <small class="text-muted">histórico completo</small>
+
+    <!-- Gráficos (Chart.js) -->
+{% if show_charts %}
+{{ chart_sales_vs_purchases|json_script:"chartSalesVsPurchasesData" }}
+{{ chart_top_customers|json_script:"chartTopCustomersData" }}
+<div class="row g-4 mb-5">
+    <div class="col-12">
+        <h5 class="mb-3" style="font-weight: 600; color: var(--text-secondary); font-size: 0.9375rem; text-transform: uppercase; letter-spacing: 0.05em;">Análisis de Negocio</h5>
+    </div>
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 pt-3 pb-2">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Ventas vs Compras ({{ period_label }})</h5>
+                <small class="text-muted">Totales diarios de operaciones confirmadas — montos en $ ARS</small>
+            </div>
+            <div class="card-body pt-2">
+                <canvas id="chartSalesVsPurchases" height="120"></canvas>
             </div>
         </div>
     </div>
-    
-    <!-- Clientes Activos -->
-    <div class="col-lg-3 col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div>
-                        <h6 class="text-muted mb-1">Clientes</h6>
-                        <h3 class="mb-0">{{ active_customers|default:0 }}</h3>
-                    </div>
-                    <div style="font-size: 2.5rem; color: var(--accent-primary); opacity: 0.6;">
-                        <i class="fas fa-users"></i>
-                    </div>
-                </div>
-                <small class="text-muted">clientes activos</small>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 pt-3 pb-2">
+                <h5 class="mb-0"><i class="fas fa-user-tie me-2"></i>Top 5 Clientes</h5>
+                <small class="text-muted">Por volumen de ventas ($ ARS) — {{ period_label }}</small>
+            </div>
+            <div class="card-body pt-2">
+                <canvas id="chartTopCustomers" height="200"></canvas>
             </div>
         </div>
     </div>
-    
-    <!-- Productos Activos -->
-    <div class="col-lg-3 col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div>
-                        <h6 class="text-muted mb-1">Productos</h6>
-                        <h3 class="mb-0">{{ active_products|default:0 }}</h3>
-                    </div>
-                    <div style="font-size: 2.5rem; color: var(--accent-warning); opacity: 0.6;">
-                        <i class="fas fa-box"></i>
-                    </div>
-                </div>
-                <small class="text-muted">productos activos</small>
-            </div>
-        </div>
-    </div>
+</div>
+{% endif %}
 </div>
 
 <!-- KPIs Secundarios (Mes Actual) -->
@@ -150,39 +224,6 @@
                     </div>
                 </div>
                 <small class="text-muted">operaciones en borrador</small>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- Análisis de Negocio (Chart.js) -->
-{% if show_charts %}
-{{ chart_sales_vs_purchases|json_script:"chartSalesVsPurchasesData" }}
-{{ chart_top_customers|json_script:"chartTopCustomersData" }}
-<div class="row g-4 mb-5">
-    <div class="col-12">
-        <h5 class="mb-3" style="font-weight: 600; color: var(--text-secondary); font-size: 0.9375rem; text-transform: uppercase; letter-spacing: 0.05em;">Análisis de Negocio</h5>
-    </div>
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-0 pt-3 pb-2">
-                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Ventas vs Compras (últimos 30 días)</h5>
-                <small class="text-muted">Totales diarios de operaciones confirmadas — montos en $ ARS</small>
-            </div>
-            <div class="card-body pt-2">
-                <canvas id="chartSalesVsPurchases" height="120"></canvas>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-4">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-0 pt-3 pb-2">
-                <h5 class="mb-0"><i class="fas fa-user-tie me-2"></i>Top 5 Clientes</h5>
-                <small class="text-muted">Por volumen de ventas ($ ARS)</small>
-            </div>
-            <div class="card-body pt-2">
-                <canvas id="chartTopCustomers" height="200"></canvas>
             </div>
         </div>
     </div>
@@ -267,91 +308,139 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous"></script>
 <script>
 (function() {
-    var salesPurchasesEl = document.getElementById('chartSalesVsPurchasesData');
-    var topCustomersEl = document.getElementById('chartTopCustomersData');
-    if (!salesPurchasesEl && !topCustomersEl) return;
-
+    window.dashboardCharts = window.dashboardCharts || {};
     var formatARS = function(v) { return '$ ' + Number(v).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); };
 
-    if (salesPurchasesEl) {
-        var salesPurchasesData = JSON.parse(salesPurchasesEl.textContent);
-        var labels = salesPurchasesData.map(function(r) { return r.date_label; });
-        var sales = salesPurchasesData.map(function(r) { return r.sales; });
-        var purchases = salesPurchasesData.map(function(r) { return r.purchases; });
-        new Chart(document.getElementById('chartSalesVsPurchases'), {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    { label: 'Ventas', data: sales, backgroundColor: 'rgba(5, 150, 105, 0.75)', borderColor: '#059669', borderWidth: 0 },
-                    { label: 'Compras', data: purchases, backgroundColor: 'rgba(8, 145, 178, 0.75)', borderColor: '#0891B2', borderWidth: 0 }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                layout: { padding: { top: 10, bottom: 10 } },
-                scales: {
-                    x: { grid: { display: false }, ticks: { maxRotation: 45, font: { size: 11 } } },
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(0,0,0,0.06)' },
-                        border: { display: false },
-                        ticks: { callback: formatARS, font: { size: 11 } }
-                    }
-                },
-                plugins: {
-                    legend: { position: 'top', labels: { boxWidth: 14, padding: 16, useBorderRadius: true } },
-                    tooltip: {
-                        backgroundColor: 'rgba(26, 31, 46, 0.95)',
-                        padding: 12,
-                        titleFont: { size: 13 },
-                        bodyFont: { size: 12 },
-                        callbacks: {
-                            label: function(ctx) { return ctx.dataset.label + ': ' + formatARS(ctx.raw); }
-                        }
-                    }
-                }
-            }
-        });
+    function destroyDashboardCharts() {
+        if (window.dashboardCharts.salesVsPurchases) {
+            window.dashboardCharts.salesVsPurchases.destroy();
+            window.dashboardCharts.salesVsPurchases = null;
+        }
+        if (window.dashboardCharts.topCustomers) {
+            window.dashboardCharts.topCustomers.destroy();
+            window.dashboardCharts.topCustomers = null;
+        }
     }
 
-    if (topCustomersEl) {
-        var topCustomersData = JSON.parse(topCustomersEl.textContent);
-        new Chart(document.getElementById('chartTopCustomers'), {
-            type: 'doughnut',
-            data: {
-                labels: topCustomersData.map(function(r) { return r.name; }),
-                datasets: [{
-                    data: topCustomersData.map(function(r) { return r.total; }),
-                    backgroundColor: ['#059669', '#0891B2', '#2563EB', '#D97706', '#6B7280'],
-                    borderWidth: 0,
-                    hoverOffset: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                cutout: '55%',
-                layout: { padding: 8 },
-                plugins: {
-                    legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12 } },
-                    tooltip: {
-                        backgroundColor: 'rgba(26, 31, 46, 0.95)',
-                        padding: 12,
-                        callbacks: {
-                            label: function(ctx) {
-                                var total = ctx.dataset.data.reduce(function(a, b) { return a + b; }, 0);
-                                var pct = total ? ((ctx.raw / total) * 100).toFixed(1) : 0;
-                                return ctx.label + ': ' + formatARS(ctx.raw) + ' (' + pct + '%)';
+    function initDashboardCharts() {
+        var container = document.getElementById('dashboard-data');
+        if (!container) return;
+        var salesPurchasesEl = document.getElementById('chartSalesVsPurchasesData');
+        var topCustomersEl = document.getElementById('chartTopCustomersData');
+        if (!salesPurchasesEl && !topCustomersEl) return;
+
+        if (salesPurchasesEl) {
+            var salesPurchasesData = JSON.parse(salesPurchasesEl.textContent);
+            var labels = salesPurchasesData.map(function(r) { return r.date_label; });
+            var sales = salesPurchasesData.map(function(r) { return r.sales; });
+            var purchases = salesPurchasesData.map(function(r) { return r.purchases; });
+            var canvas = document.getElementById('chartSalesVsPurchases');
+            if (canvas) {
+                window.dashboardCharts.salesVsPurchases = new Chart(canvas, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            { label: 'Ventas', data: sales, backgroundColor: 'rgba(5, 150, 105, 0.75)', borderColor: '#059669', borderWidth: 0 },
+                            { label: 'Compras', data: purchases, backgroundColor: 'rgba(8, 145, 178, 0.75)', borderColor: '#0891B2', borderWidth: 0 }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        layout: { padding: { top: 10, bottom: 10 } },
+                        scales: {
+                            x: { grid: { display: false }, ticks: { maxRotation: 45, font: { size: 11 } } },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(0,0,0,0.06)' },
+                                border: { display: false },
+                                ticks: { callback: formatARS, font: { size: 11 } }
+                            }
+                        },
+                        plugins: {
+                            legend: { position: 'top', labels: { boxWidth: 14, padding: 16, useBorderRadius: true } },
+                            tooltip: {
+                                backgroundColor: 'rgba(26, 31, 46, 0.95)',
+                                padding: 12,
+                                titleFont: { size: 13 },
+                                bodyFont: { size: 12 },
+                                callbacks: {
+                                    label: function(ctx) { return ctx.dataset.label + ': ' + formatARS(ctx.raw); }
+                                }
                             }
                         }
                     }
-                }
+                });
             }
-        });
+        }
+
+        if (topCustomersEl) {
+            var topCustomersData = JSON.parse(topCustomersEl.textContent);
+            var canvas = document.getElementById('chartTopCustomers');
+            if (canvas) {
+                window.dashboardCharts.topCustomers = new Chart(canvas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: topCustomersData.map(function(r) { return r.name; }),
+                        datasets: [{
+                            data: topCustomersData.map(function(r) { return r.total; }),
+                            backgroundColor: ['#059669', '#0891B2', '#2563EB', '#D97706', '#6B7280'],
+                            borderWidth: 0,
+                            hoverOffset: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        cutout: '55%',
+                        layout: { padding: 8 },
+                        plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12 } },
+                            tooltip: {
+                                backgroundColor: 'rgba(26, 31, 46, 0.95)',
+                                padding: 12,
+                                callbacks: {
+                                    label: function(ctx) {
+                                        var total = ctx.dataset.data.reduce(function(a, b) { return a + b; }, 0);
+                                        var pct = total ? ((ctx.raw / total) * 100).toFixed(1) : 0;
+                                        return ctx.label + ': ' + formatARS(ctx.raw) + ' (' + pct + '%)';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initDashboardCharts();
+    });
+
+    document.body.addEventListener('htmx:afterOnLoad', function(evt) {
+        if (evt.detail && evt.detail.target && evt.detail.target.id === 'dashboard-data') {
+            destroyDashboardCharts();
+            initDashboardCharts();
+        }
+    });
 })();
 </script>
 {% endif %}
+<script>
+(function() {
+    var baseUrl = "{% url 'core:dashboard_pdf_export' %}";
+    document.addEventListener('DOMContentLoaded', function() {
+        var link = document.getElementById('dashboard-pdf-link');
+        var sel = document.getElementById('dashboard-period-select');
+        if (link && sel) {
+            link.addEventListener('click', function(e) {
+                var period = sel.value || 'this_month';
+                this.href = baseUrl + '?period=' + encodeURIComponent(period);
+            });
+        }
+    });
+})();
+</script>
 {% endblock %}

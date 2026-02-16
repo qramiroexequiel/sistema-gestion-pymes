@@ -225,36 +225,63 @@ def recalculate_operation_totals(operation):
 @transaction.atomic
 def confirm_operation(operation, user=None):
     """
-    Confirma una operación.
-    
-    Args:
-        operation: Instancia de Operation
-        user: Usuario que confirma
-    
-    Returns:
-        Operation: Operación confirmada
-    
-    Raises:
-        ValidationError: Si la operación no puede ser confirmada
+    Confirma una operación y actualiza el stock de productos (motor de inventario).
+    - Venta: resta cantidad al stock (ValidationError si queda negativo).
+    - Compra: suma cantidad al stock.
+    - Si stock <= stock_minimo tras la operación, se registra alerta "Stock Bajo" en auditoría.
     """
-    # Validar que la operación sea borrador
     if operation.status != 'draft':
         raise ValidationError('Solo se pueden confirmar operaciones en estado borrador.')
-    
-    # Validar que tenga items
     if not operation.items.exists():
         raise ValidationError('La operación debe tener al menos un item para ser confirmada.')
-    
-    # Validar cliente/proveedor según tipo
     if operation.type == 'sale' and not operation.customer:
         raise ValidationError('Una venta debe tener un cliente asociado.')
     if operation.type == 'purchase' and not operation.supplier:
         raise ValidationError('Una compra debe tener un proveedor asociado.')
-    
-    # Confirmar operación
+
+    from core.utils import log_audit
+
+    for item in operation.items.select_related('product').all():
+        product = item.product
+        if product.type != 'product':
+            continue
+        current_stock = (product.stock or Decimal('0')).quantize(TWOPLACES, rounding=ROUND_HALF_UP)
+        qty = (item.quantity or Decimal('0')).quantize(TWOPLACES, rounding=ROUND_HALF_UP)
+        stock_min = (product.stock_minimo or Decimal('0')).quantize(TWOPLACES, rounding=ROUND_HALF_UP)
+
+        if operation.type == 'sale':
+            new_stock = current_stock - qty
+            if new_stock < 0:
+                raise ValidationError(
+                    f'Stock insuficiente para "{product.name}" (código {product.code}). '
+                    f'Stock actual: {current_stock}, solicitado: {qty}. No se puede confirmar la venta.'
+                )
+            product.stock = new_stock.quantize(TWOPLACES, rounding=ROUND_HALF_UP)
+        else:
+            new_stock = current_stock + qty
+            product.stock = new_stock.quantize(TWOPLACES, rounding=ROUND_HALF_UP)
+
+        product.save(update_fields=['stock'])
+
+        if product.stock <= stock_min and stock_min > 0:
+            log_audit(
+                company=operation.company,
+                user=user,
+                action='update',
+                model_name='Product',
+                object_id=product.pk,
+                changes={
+                    'alert': 'Stock Bajo',
+                    'product': product.name,
+                    'code': product.code,
+                    'stock_actual': str(product.stock),
+                    'stock_minimo': str(stock_min),
+                },
+                ip_address=None,
+            )
+
     operation.status = 'confirmed'
     operation.save(update_fields=['status'])
-    
     return operation
 
 

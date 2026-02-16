@@ -15,6 +15,7 @@ from core.mixins import (
 from core.constants import ROLE_ADMIN, ROLE_MANAGER, ROLE_OPERATOR
 from core.utils import log_audit
 from core.utils.request import get_client_ip
+from core.utils.security_services import check_anomalous_behavior
 from core.utils.csv_export import export_csv_response
 from .models import Product
 from .forms import ProductForm
@@ -235,6 +236,7 @@ class ProductDeleteView(
         )
         
         response = super().delete(request, *args, **kwargs)
+        check_anomalous_behavior(request.user, self.get_company())
         messages.success(request, f'Producto/Servicio "{product_name}" eliminado correctamente.')
         return response
 

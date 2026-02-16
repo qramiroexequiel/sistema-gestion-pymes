@@ -22,6 +22,13 @@ class Product(CompanyModelMixin):
     price = models.DecimalField('Precio', max_digits=12, decimal_places=2, default=0.00)
     unit_of_measure = models.CharField('Unidad de medida', max_length=20, default='unidad')
     stock = models.DecimalField('Stock', max_digits=12, decimal_places=2, blank=True, null=True)
+    stock_minimo = models.DecimalField(
+        'Stock mínimo',
+        max_digits=12,
+        decimal_places=2,
+        default=0.00,
+        help_text='Alerta cuando el stock cae por debajo de este valor.'
+    )
     active = models.BooleanField('Activo', default=True)
     
     objects = CompanyManager()

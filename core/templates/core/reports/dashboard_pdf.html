@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <title>Reporte Dashboard - {{ company_name }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1.5cm;
+        }
+        body {
+            font-family: "Helvetica", "Arial", sans-serif;
+            font-size: 11px;
+            color: #333;
+            line-height: 1.35;
+        }
+        .header {
+            border-bottom: 2px solid #1a1f2e;
+            padding-bottom: 10px;
+            margin-bottom: 16px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a1f2e;
+        }
+        .header .subtitle {
+            margin: 4px 0 0 0;
+            font-size: 11px;
+            color: #666;
+        }
+        .kpi-grid {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .kpi-grid td {
+            width: 25%;
+            padding: 12px 10px;
+            border: 1px solid #ddd;
+            vertical-align: top;
+            background: #fafafa;
+        }
+        .kpi-grid .kpi-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        .kpi-grid .kpi-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1a1f2e;
+        }
+        .kpi-grid .kpi-meta {
+            font-size: 9px;
+            color: #888;
+            margin-top: 4px;
+        }
+        .section-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #555;
+            margin: 18px 0 10px 0;
+            padding-bottom: 4px;
+        }
+        table.operations {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+        table.operations th {
+            text-align: left;
+            padding: 8px 6px;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #555;
+            border-bottom: 2px solid #1a1f2e;
+            background: #f0f0f0;
+        }
+        table.operations td {
+            padding: 6px;
+            border-bottom: 1px solid #eee;
+        }
+        table.operations tr:nth-child(even) td {
+            background: #fafafa;
+        }
+        .type-sale { color: #059669; }
+        .type-purchase { color: #0891b2; }
+        .text-right { text-align: right; }
+        .footer-note {
+            margin-top: 24px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+            font-size: 9px;
+            color: #888;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ company_name }}</h1>
+        <p class="subtitle">Reporte de Dashboard — Período: {{ period_label }}</p>
+    </div>
+
+    <table class="kpi-grid">
+        <tr>
+            <td>
+                <div class="kpi-label">Total Ventas</div>
+                <div class="kpi-value">$ {{ period_sales|floatformat:2 }}</div>
+                <div class="kpi-meta">{{ period_label }}</div>
+            </td>
+            <td>
+                <div class="kpi-label">Total Compras</div>
+                <div class="kpi-value">$ {{ period_purchases|floatformat:2 }}</div>
+                <div class="kpi-meta">{{ period_label }}</div>
+            </td>
+            <td>
+                <div class="kpi-label">Clientes activos</div>
+                <div class="kpi-value">{{ active_customers }}</div>
+            </td>
+            <td>
+                <div class="kpi-label">Productos activos</div>
+                <div class="kpi-value">{{ active_products }}</div>
+            </td>
+        </tr>
+    </table>
+    <p class="kpi-meta" style="margin-top: -10px;">{{ period_operations }} operación{{ period_operations|pluralize:"es" }} confirmada{{ period_operations|pluralize:"s" }} en el período.</p>
+
+    <div class="section-title">Últimas 20 operaciones del período</div>
+    <table class="operations">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Número</th>
+                <th>Cliente / Proveedor</th>
+                <th class="text-right">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for op in operations %}
+            <tr>
+                <td>{{ op.date|date:"d/m/Y" }}</td>
+                <td class="type-{{ op.type }}">{{ op.get_type_display }}</td>
+                <td>{{ op.number }}</td>
+                <td>{% if op.type == 'sale' %}{{ op.customer.name|default:"—" }}{% else %}{{ op.supplier.name|default:"—" }}{% endif %}</td>
+                <td class="text-right">$ {{ op.total|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="text-align: center; color: #888;">No hay operaciones en este período.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer-note">Reporte generado por Fénix AutoDev — {{ report_date|date:"d/m/Y H:i" }}</div>
+</body>
+</html>
