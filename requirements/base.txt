@@ -6,7 +6,11 @@ psycopg2-binary>=2.9.0
 
 # Configuration
 python-decouple>=3.8
+python-dotenv>=1.0.0
 dj-database-url>=2.1.0
+
+# Security
+django-ratelimit>=4.1.0
 
 # Forms
 django-crispy-forms>=2.0

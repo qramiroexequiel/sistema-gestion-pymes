@@ -8,6 +8,7 @@ from django.shortcuts import render, redirect
 from django.views.generic import TemplateView, UpdateView, View
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView as AuthLoginView
 from django.utils.decorators import method_decorator
 from django.db.models import Count, Sum
 from django.http import Http404, HttpResponse
@@ -15,6 +16,20 @@ from django.template.loader import render_to_string
 from .mixins import CompanyRequiredMixin, CompanyContextMixin
 from .models import Membership, Company
 from django.contrib.auth.models import User
+
+try:
+    from django_ratelimit.decorators import ratelimit
+except ImportError:
+    def ratelimit(*args, **kwargs):
+        def decorator(f):
+            return f
+        return decorator
+
+
+@ratelimit(key='ip', rate='5/m', block=True)
+def login_view(request):
+    """Vista de login con rate limiting (5 intentos por minuto por IP) contra fuerza bruta."""
+    return AuthLoginView.as_view(template_name='registration/login.html')(request)
 
 
 def _get_period_dates(period):

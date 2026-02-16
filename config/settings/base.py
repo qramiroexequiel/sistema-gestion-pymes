@@ -2,25 +2,45 @@
 Django base settings for Pymes Management System.
 
 Configuración base compartida entre todos los entornos.
+Variables sensibles se cargan desde .env (python-dotenv).
 """
 
 import os
 from pathlib import Path
 
+# Cargar .env desde la raíz del proyecto (antes de leer config)
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+_env_path = BASE_DIR / '.env'
+if _env_path.exists():
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(_env_path)
+    except ImportError:
+        pass
+
 try:
     from decouple import config, Csv
 except ImportError:
-    # Fallback si decouple no está instalado
     def config(key, default=None, cast=None):
-        return os.getenv(key, default)
+        value = os.getenv(key, default)
+        if cast and value is not None:
+            return cast(value)
+        return value
     def Csv(*args, **kwargs):
         return lambda v: [s.strip() for s in v.split(',')]
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+# SECRET_KEY: desde .env. En producción NUNCA usar default.
+SECRET_KEY = os.getenv('SECRET_KEY') or config(
+    'SECRET_KEY',
+    default='django-insecure-8sn)j8lrk5$6e2m23=o_+ut06!=b%n@rq9givq%d3=4p%)+20c'
+)
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-8sn)j8lrk5$6e2m23=o_+ut06!=b%n@rq9givq%d3=4p%)+20c')
+# DEBUG: desde .env (default False por seguridad)
+_debug_val = (os.getenv('DEBUG') or config('DEBUG', default='False')).strip().lower()
+DEBUG = _debug_val in ('true', '1', 'yes')
+
+# URL del admin: desde .env (ej. ADMIN_URL=panel-secreto para ofuscar)
+ADMIN_URL = (os.getenv('ADMIN_URL') or config('ADMIN_URL', default='admin/')).strip('/') + '/'
 
 # Application definition
 INSTALLED_APPS = [
@@ -127,7 +147,14 @@ LOGOUT_REDIRECT_URL = '/login/'
 SESSION_COOKIE_AGE = 86400  # 24 horas
 SESSION_SAVE_EVERY_REQUEST = True
 
-# Security settings (sobreescrito en production.py)
+# Security headers (siempre activos; producción añade SSL/HSTS)
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+# Cookies: HTTPONLY para evitar acceso desde JS (XSS)
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+# SSL redirect solo en producción (SECURE_SSL_REDIRECT = True en production.py)
 SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
