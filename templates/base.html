@@ -1,6 +1,16 @@
 <!DOCTYPE html>
-<html lang="es" data-bs-theme="light">
+<html lang="es">
 <head>
+    <script>
+        (function() {
+            var theme = localStorage.getItem('bs-theme');
+            if (theme === 'dark' || theme === 'light') {
+                document.documentElement.setAttribute('data-bs-theme', theme);
+            } else {
+                document.documentElement.setAttribute('data-bs-theme', 'light');
+            }
+        })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Suite Business | {% block title %}{% endblock %}</title>
@@ -954,6 +964,23 @@
     
     <!-- Toastify.js - notificaciones toast -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastify-js/1.12.0/toastify.min.css" crossorigin="anonymous" />
+    <style>
+        /* Toastify: bordes y sombras en modo claro */
+        .toastify {
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        /* Toastify: modo oscuro */
+        [data-bs-theme="dark"] .toastify {
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+        /* Iconos del botón de tema: mostrar luna en light, sol en dark */
+        .theme-toggle-btn .theme-icon-light { display: none !important; }
+        .theme-toggle-btn .theme-icon-dark { display: inline-block !important; }
+        [data-bs-theme="dark"] .theme-toggle-btn .theme-icon-dark { display: none !important; }
+        [data-bs-theme="dark"] .theme-toggle-btn .theme-icon-light { display: inline-block !important; }
+    </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -1016,6 +1043,10 @@
             <header class="top-header">
                 <div class="header-left"></div>
                 <div class="header-right">
+                    <button type="button" class="btn btn-link btn-sm p-2 text-body-secondary text-decoration-none border-0 theme-toggle-btn" id="theme-toggle" title="Cambiar tema" aria-label="Cambiar tema claro/oscuro">
+                        <i class="fas fa-moon theme-icon-dark"></i>
+                        <i class="fas fa-sun theme-icon-light"></i>
+                    </button>
                     {% if current_company %}
                         <div class="company-selector">
                             <i class="fas fa-building"></i>
@@ -1110,6 +1141,29 @@
                     stopOnFocus: true,
                     style: { background: style }
                 }).showToast();
+            });
+        })();
+    </script>
+    
+    <!-- Tema persistente: intercambio y persistencia -->
+    <script>
+        (function() {
+            function getTheme() {
+                return document.documentElement.getAttribute('data-bs-theme') || 'light';
+            }
+            function setTheme(theme) {
+                theme = theme === 'dark' ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-bs-theme', theme);
+                localStorage.setItem('bs-theme', theme);
+                window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: theme } }));
+            }
+            document.addEventListener('DOMContentLoaded', function() {
+                var btn = document.getElementById('theme-toggle');
+                if (btn) {
+                    btn.addEventListener('click', function() {
+                        setTheme(getTheme() === 'dark' ? 'light' : 'dark');
+                    });
+                }
             });
         })();
     </script>
