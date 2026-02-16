@@ -16,9 +16,27 @@ from products.models import Product
 TWOPLACES = Decimal("0.01")
 
 
+def get_company_tax_rate(company):
+    """
+    Obtiene la tasa de impuesto por defecto de la empresa desde CompanySettings.
+    Si no existe configuración, retorna Decimal('0.00').
+    Evita usar float para precisión contable.
+    """
+    try:
+        from config_app.models import CompanySettings
+        settings = CompanySettings.objects.filter(company=company).first()
+        if settings is not None and settings.tax_rate_default is not None:
+            return Decimal(str(settings.tax_rate_default))
+    except Exception:
+        pass
+    return Decimal('0.00')
+
+
+@transaction.atomic
 def create_operation(company, type, date, customer=None, supplier=None, notes=None, created_by=None):
     """
     Crea una nueva operación (venta o compra).
+    Atómico: si falla la validación o el save, no se persiste nada.
     
     Args:
         company: Instancia de Company
@@ -114,13 +132,13 @@ def add_item_to_operation(operation, product, quantity, unit_price):
     if unit_price < 0:
         raise ValidationError('El precio unitario no puede ser negativo.')
     
-    # Calcular subtotal del item (asegurar que sean Decimal)
+    # Calcular subtotal del item (siempre Decimal, cuantizado a 2 decimales)
     if not isinstance(quantity, Decimal):
         quantity = Decimal(str(quantity))
     if not isinstance(unit_price, Decimal):
         unit_price = Decimal(str(unit_price))
-    subtotal = quantity * unit_price
-    
+    subtotal = (quantity * unit_price).quantize(TWOPLACES, rounding=ROUND_HALF_UP)
+
     # Crear item con subtotal calculado
     item = OperationItem(
         operation=operation,
@@ -167,6 +185,8 @@ def remove_item_from_operation(operation, item_id):
 def recalculate_operation_totals(operation):
     """
     Recalcula los totales de una operación desde sus items.
+    Usa la tasa de impuesto por defecto de CompanySettings de la empresa.
+    Todos los cálculos en Decimal para evitar errores de precisión.
     
     Args:
         operation: Instancia de Operation
@@ -174,26 +194,31 @@ def recalculate_operation_totals(operation):
     Returns:
         Operation: Operación actualizada
     """
-    # Calcular subtotal desde items
+    # Calcular subtotal desde items (ORM devuelve Decimal para DecimalField)
     items_total = OperationItem.objects.filter(operation=operation).aggregate(
         total=Sum(F('quantity') * F('unit_price'))
-    )['total'] or Decimal('0.00')
-    
+    )['total']
+    if items_total is None:
+        items_total = Decimal('0.00')
+    else:
+        items_total = Decimal(str(items_total))
+
     # Cuantizar subtotal a 2 decimales (rounding contable estándar)
     operation.subtotal = items_total.quantize(TWOPLACES, rounding=ROUND_HALF_UP)
-    
-    # Calcular impuesto (por ahora 0, puede venir de config por empresa)
-    tax_value = Decimal('0.00')
-    # Cuantizar impuesto a 2 decimales
-    operation.tax = tax_value.quantize(TWOPLACES, rounding=ROUND_HALF_UP)
-    
-    # Calcular total
+
+    # Impuesto desde CompanySettings (tasa en % sobre subtotal)
+    tax_rate = get_company_tax_rate(operation.company)
+    tax_value = (operation.subtotal * tax_rate / Decimal('100')).quantize(
+        TWOPLACES, rounding=ROUND_HALF_UP
+    )
+    operation.tax = tax_value
+
+    # Total = subtotal + impuesto
     total_value = operation.subtotal + operation.tax
-    # Cuantizar total a 2 decimales
     operation.total = total_value.quantize(TWOPLACES, rounding=ROUND_HALF_UP)
-    
+
     operation.save(update_fields=['subtotal', 'tax', 'total'])
-    
+
     return operation
 
 
@@ -286,19 +311,21 @@ def update_operation_item(operation, item_id, quantity=None, unit_price=None):
     except OperationItem.DoesNotExist:
         raise ValidationError('El item no existe o no pertenece a esta operación.')
     
-    # Actualizar campos si se proporcionan
+    # Actualizar campos si se proporcionan (siempre Decimal para precisión)
     if quantity is not None:
+        quantity = Decimal(str(quantity))
         if quantity <= 0:
             raise ValidationError('La cantidad debe ser mayor a cero.')
         item.quantity = quantity
-    
+
     if unit_price is not None:
+        unit_price = Decimal(str(unit_price))
         if unit_price < 0:
             raise ValidationError('El precio unitario no puede ser negativo.')
         item.unit_price = unit_price
-    
-    # Recalcular subtotal del item
-    item.subtotal = item.quantity * item.unit_price
+
+    # Recalcular subtotal del item con Decimal y cuantización
+    item.subtotal = (item.quantity * item.unit_price).quantize(TWOPLACES, rounding=ROUND_HALF_UP)
     item.save()
     
     # Recalcular totales de la operación (OBLIGATORIO después de modificar item)

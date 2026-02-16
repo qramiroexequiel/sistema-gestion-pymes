@@ -2,6 +2,8 @@
 Modelos del módulo de operaciones (ventas y compras unificadas).
 """
 
+from decimal import Decimal, ROUND_HALF_UP
+
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.db.models import Sum, F
@@ -10,6 +12,9 @@ from core.managers import CompanyManager
 from customers.models import Customer
 from suppliers.models import Supplier
 from products.models import Product
+
+# Cuantización contable (2 decimales)
+_TWOPLACES = Decimal("0.01")
 
 
 class Operation(CompanyModelMixin):
@@ -122,14 +127,14 @@ class OperationItem(models.Model):
     
     def save(self, *args, **kwargs):
         """
-        Calcula el subtotal antes de guardar.
-        IMPORTANTE: No recalcula totales de la operación aquí.
-        Los totales deben recalcularse explícitamente usando services.
+        Calcula el subtotal antes de guardar usando Decimal para evitar errores
+        de precisión (nunca float). No recalcula totales de la operación;
+        eso debe hacerse explícitamente en operations.services.
         """
-        # Calcular subtotal del item (cálculo simple, no lógica de negocio)
-        self.subtotal = self.quantity * self.unit_price
+        qty = self.quantity if isinstance(self.quantity, Decimal) else Decimal(str(self.quantity))
+        price = self.unit_price if isinstance(self.unit_price, Decimal) else Decimal(str(self.unit_price))
+        self.subtotal = (qty * price).quantize(_TWOPLACES, rounding=ROUND_HALF_UP)
         super().save(*args, **kwargs)
-        # NO recalcular totales aquí - debe hacerse explícitamente en services
     
     def __str__(self):
         return f'{self.product.name} - {self.quantity} x {self.unit_price}'

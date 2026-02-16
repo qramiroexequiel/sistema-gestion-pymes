@@ -4,7 +4,8 @@ from django.views.generic import ListView, CreateView, DetailView, View
 from django.urls import reverse_lazy, reverse
 from django.shortcuts import redirect, get_object_or_404
 from django.contrib import messages
-from django.db import models
+from django.db import models, transaction
+from django.core.exceptions import ValidationError
 from core.mixins import (
     CompanyRequiredMixin, 
     CompanyContextMixin, 
@@ -144,81 +145,66 @@ class OperationCreateView(
         return context
     
     def form_valid(self, form):
-        """Guarda la operación y sus items."""
+        """Guarda la operación y sus items. Atómico: si falla cualquier paso, no se persiste nada."""
         context = self.get_context_data()
         item_formset = context['item_formset']
-        
-        if item_formset.is_valid():
-            # Guardar operación usando service
-            company = self.get_company()
-            operation = create_operation(
-                company=company,
-                type=form.cleaned_data['type'],
-                date=form.cleaned_data['date'],
-                customer=form.cleaned_data.get('customer'),
-                supplier=form.cleaned_data.get('supplier'),
-                notes=form.cleaned_data.get('notes'),
-                created_by=self.request.user
-            )
-            
-            # Guardar items usando formset y services
-            item_formset.instance = operation
-            items = item_formset.save(commit=False)
-            
-            # Validar y guardar items usando services (lógica de negocio centralizada)
-            for item in items:
-                # Validar que el producto pertenezca a la empresa
-                if item.product.company != company:
-                    messages.error(self.request, f'El producto {item.product.name} no pertenece a esta empresa.')
-                    return self.form_invalid(form)
-                
-                # Usar service para agregar item (valida estado, calcula subtotal, recalcula totales)
-                try:
+
+        if not item_formset.is_valid():
+            return self.form_invalid(form)
+
+        company = self.get_company()
+        try:
+            with transaction.atomic():
+                operation = create_operation(
+                    company=company,
+                    type=form.cleaned_data['type'],
+                    date=form.cleaned_data['date'],
+                    customer=form.cleaned_data.get('customer'),
+                    supplier=form.cleaned_data.get('supplier'),
+                    notes=form.cleaned_data.get('notes'),
+                    created_by=self.request.user
+                )
+
+                item_formset.instance = operation
+                items = item_formset.save(commit=False)
+
+                for item in items:
+                    if item.product.company != company:
+                        raise ValidationError(
+                            f'El producto {item.product.name} no pertenece a esta empresa.'
+                        )
                     add_item_to_operation(
                         operation=operation,
                         product=item.product,
                         quantity=item.quantity,
                         unit_price=item.unit_price
                     )
-                except ValidationError as e:
-                    messages.error(self.request, str(e))
-                    return self.form_invalid(form)
-            
-            # Eliminar items marcados para eliminar usando service
-            for item in item_formset.deleted_objects:
-                try:
+
+                for item in item_formset.deleted_objects:
                     remove_item_from_operation(operation, item.id)
-                except ValidationError as e:
-                    messages.error(self.request, str(e))
-                    return self.form_invalid(form)
-            
-            # Validar que haya al menos un item
-            if not operation.items.exists():
-                messages.error(self.request, 'La operación debe tener al menos un item.')
-                return self.form_invalid(form)
-            
-            # Los totales ya fueron recalculados por add_item_to_operation y remove_item_from_operation
-            # No es necesario recalcular nuevamente
-            
-            # Auditoría: registrar creación
-            log_audit(
-                company=company,
-                user=self.request.user,
-                action='create',
-                model_name='Operation',
-                object_id=operation.pk,
-                changes={
-                    'type': operation.type,
-                    'number': operation.number,
-                    'date': str(operation.date)
-                },
-                ip_address=get_client_ip(self.request)
-            )
-            
-            messages.success(self.request, f'Operación "{operation.number}" creada correctamente.')
-            return redirect('operations:detail', pk=operation.pk)
-        else:
+
+                if not operation.items.exists():
+                    raise ValidationError('La operación debe tener al menos un item.')
+
+                log_audit(
+                    company=company,
+                    user=self.request.user,
+                    action='create',
+                    model_name='Operation',
+                    object_id=operation.pk,
+                    changes={
+                        'type': operation.type,
+                        'number': operation.number,
+                        'date': str(operation.date)
+                    },
+                    ip_address=get_client_ip(self.request)
+                )
+        except ValidationError as e:
+            messages.error(self.request, str(e))
             return self.form_invalid(form)
+
+        messages.success(self.request, f'Operación "{operation.number}" creada correctamente.')
+        return redirect('operations:detail', pk=operation.pk)
     
     def get_success_url(self):
         """URL después de crear exitosamente."""
