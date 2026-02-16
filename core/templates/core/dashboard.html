@@ -28,7 +28,15 @@
                 <div class="d-flex align-items-center justify-content-between mb-3">
                     <div>
                         <h6 class="text-muted mb-1">Total Ventas</h6>
-                        <h3 class="mb-0">${{ total_sales|floatformat:2|default:"0.00" }}</h3>
+                        <h3 class="mb-0 d-flex align-items-center flex-wrap gap-2">
+                            ${{ total_sales|floatformat:2|default:"0.00" }}
+                            {% if ventas_tendencia is not None %}
+                            <span class="badge {% if ventas_tendencia > 0 %}bg-success{% elif ventas_tendencia < 0 %}bg-danger{% else %}bg-secondary{% endif %} py-1 px-2" style="font-size: 0.7rem; font-weight: 600;">
+                                {% if ventas_tendencia > 0 %}<i class="fas fa-arrow-up me-1"></i>{% elif ventas_tendencia < 0 %}<i class="fas fa-arrow-down me-1"></i>{% endif %}
+                                {{ ventas_tendencia }}% vs mes anterior
+                            </span>
+                            {% endif %}
+                        </h3>
                     </div>
                     <div style="font-size: 2.5rem; color: var(--accent-success); opacity: 0.6;">
                         <i class="fas fa-arrow-trend-up"></i>
@@ -148,6 +156,39 @@
 </div>
 {% endif %}
 
+<!-- Análisis de Negocio (Chart.js) -->
+{% if show_charts %}
+{{ chart_sales_vs_purchases|json_script:"chartSalesVsPurchasesData" }}
+{{ chart_top_customers|json_script:"chartTopCustomersData" }}
+<div class="row g-4 mb-5">
+    <div class="col-12">
+        <h5 class="mb-3" style="font-weight: 600; color: var(--text-secondary); font-size: 0.9375rem; text-transform: uppercase; letter-spacing: 0.05em;">Análisis de Negocio</h5>
+    </div>
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 pt-3 pb-2">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Ventas vs Compras (últimos 30 días)</h5>
+                <small class="text-muted">Totales diarios de operaciones confirmadas — montos en $ ARS</small>
+            </div>
+            <div class="card-body pt-2">
+                <canvas id="chartSalesVsPurchases" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 pt-3 pb-2">
+                <h5 class="mb-0"><i class="fas fa-user-tie me-2"></i>Top 5 Clientes</h5>
+                <small class="text-muted">Por volumen de ventas ($ ARS)</small>
+            </div>
+            <div class="card-body pt-2">
+                <canvas id="chartTopCustomers" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Acciones Rápidas -->
 <div class="row g-4">
     <div class="col-lg-6">
@@ -219,4 +260,98 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% if show_charts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+<script>
+(function() {
+    var salesPurchasesEl = document.getElementById('chartSalesVsPurchasesData');
+    var topCustomersEl = document.getElementById('chartTopCustomersData');
+    if (!salesPurchasesEl && !topCustomersEl) return;
+
+    var formatARS = function(v) { return '$ ' + Number(v).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); };
+
+    if (salesPurchasesEl) {
+        var salesPurchasesData = JSON.parse(salesPurchasesEl.textContent);
+        var labels = salesPurchasesData.map(function(r) { return r.date_label; });
+        var sales = salesPurchasesData.map(function(r) { return r.sales; });
+        var purchases = salesPurchasesData.map(function(r) { return r.purchases; });
+        new Chart(document.getElementById('chartSalesVsPurchases'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Ventas', data: sales, backgroundColor: 'rgba(5, 150, 105, 0.75)', borderColor: '#059669', borderWidth: 0 },
+                    { label: 'Compras', data: purchases, backgroundColor: 'rgba(8, 145, 178, 0.75)', borderColor: '#0891B2', borderWidth: 0 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                layout: { padding: { top: 10, bottom: 10 } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { maxRotation: 45, font: { size: 11 } } },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.06)' },
+                        border: { display: false },
+                        ticks: { callback: formatARS, font: { size: 11 } }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'top', labels: { boxWidth: 14, padding: 16, useBorderRadius: true } },
+                    tooltip: {
+                        backgroundColor: 'rgba(26, 31, 46, 0.95)',
+                        padding: 12,
+                        titleFont: { size: 13 },
+                        bodyFont: { size: 12 },
+                        callbacks: {
+                            label: function(ctx) { return ctx.dataset.label + ': ' + formatARS(ctx.raw); }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    if (topCustomersEl) {
+        var topCustomersData = JSON.parse(topCustomersEl.textContent);
+        new Chart(document.getElementById('chartTopCustomers'), {
+            type: 'doughnut',
+            data: {
+                labels: topCustomersData.map(function(r) { return r.name; }),
+                datasets: [{
+                    data: topCustomersData.map(function(r) { return r.total; }),
+                    backgroundColor: ['#059669', '#0891B2', '#2563EB', '#D97706', '#6B7280'],
+                    borderWidth: 0,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                cutout: '55%',
+                layout: { padding: 8 },
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12 } },
+                    tooltip: {
+                        backgroundColor: 'rgba(26, 31, 46, 0.95)',
+                        padding: 12,
+                        callbacks: {
+                            label: function(ctx) {
+                                var total = ctx.dataset.data.reduce(function(a, b) { return a + b; }, 0);
+                                var pct = total ? ((ctx.raw / total) * 100).toFixed(1) : 0;
+                                return ctx.label + ': ' + formatARS(ctx.raw) + ' (' + pct + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+})();
+</script>
+{% endif %}
 {% endblock %}
