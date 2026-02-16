@@ -32,6 +32,10 @@ media/
 *.swo
 *~
 
+# --- Copias de seguridad de base de datos (solo estructura backups/ se versiona) ---
+backups/*.gz
+backups/*.sqlite3.gz
+
 # --- Logs (generados en runtime y producción) ---
 logs/
 *.log

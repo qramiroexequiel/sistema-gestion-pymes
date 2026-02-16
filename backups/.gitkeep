@@ -1,0 +1,2 @@
+# Mantiene la carpeta backups/ en el repositorio.
+# Los archivos .sqlite3.gz están en .gitignore.
