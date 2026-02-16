@@ -98,6 +98,19 @@
             --transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);
         }
         
+        /* Modo oscuro: redefinir variables para que fondos y texto sigan a Bootstrap */
+        [data-bs-theme="dark"] {
+            --bg-primary: var(--bs-body-bg);
+            --bg-secondary: var(--bs-secondary-bg);
+            --bg-tertiary: var(--bs-tertiary-bg);
+            --bg-hover: rgba(255, 255, 255, 0.08);
+            --text-primary: var(--bs-body-color);
+            --text-secondary: var(--bs-secondary-color);
+            --text-tertiary: rgba(255, 255, 255, 0.5);
+            --border-color: var(--bs-border-color);
+            --border-color-hover: rgba(255, 255, 255, 0.2);
+        }
+        
         * {
             box-sizing: border-box;
         }
@@ -107,7 +120,7 @@
             font-size: var(--font-size-base);
             line-height: var(--line-height-base);
             color: var(--text-primary);
-            background: var(--bg-primary);
+            background-color: var(--bg-primary);
             margin: 0;
             padding: 0;
             -webkit-font-smoothing: antialiased;

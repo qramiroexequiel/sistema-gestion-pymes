@@ -19,6 +19,7 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 from core.models import Company, Membership
 from config_app.models import CompanySettings
@@ -238,11 +239,15 @@ class Command(BaseCommand):
         return products
 
     def _create_operations(self, company, user, customers, suppliers, products):
-        """Genera 10 ventas y 5 compras en los últimos 20 días usando services."""
+        """
+        Primero: compras para todos los productos físicos (generan stock).
+        Después: ventas con cantidades <= stock disponible.
+        ValidationError en una operación no detiene el resto.
+        """
         import random
 
         self.stdout.write("")
-        self.stdout.write("💼 Operaciones (ventas y compras vía services)")
+        self.stdout.write("💼 Operaciones (compras primero → stock; luego ventas)")
 
         if not customers or not suppliers or not products:
             self._warning("Faltan clientes, proveedores o productos. No se crean operaciones.")
@@ -252,50 +257,111 @@ class Command(BaseCommand):
         start = today - timedelta(days=20)
         date_list = [start + timedelta(days=i) for i in range(21)]
 
-        # 10 ventas
-        for i in range(10):
-            op_date = random.choice(date_list)
-            customer = random.choice(customers)
-            operation = create_operation(
-                company=company,
-                type="sale",
-                date=op_date,
-                customer=customer,
-                created_by=user,
-            )
-            num_items = random.randint(1, min(3, len(products)))
-            for product in random.sample(products, num_items):
-                qty = Decimal(str(round(random.uniform(1, 5), 2)))
-                unit_price = product.price * Decimal(str(round(random.uniform(0.95, 1.05), 2)))
-                add_item_to_operation(
-                    operation=operation,
-                    product=product,
-                    quantity=qty,
-                    unit_price=unit_price,
-                )
-            confirm_operation(operation, user=user)
-            self._success(f"Venta #{operation.number} - {customer.name} - ${operation.total}")
+        physical_products = [p for p in products if p.type == "product"]
+        stock_per_product = Decimal("50")  # stock inicial por producto físico
 
-        # 5 compras
-        for i in range(5):
-            op_date = random.choice(date_list)
-            supplier = random.choice(suppliers)
-            operation = create_operation(
-                company=company,
-                type="purchase",
-                date=op_date,
-                supplier=supplier,
-                created_by=user,
-            )
-            num_items = random.randint(1, min(3, len(products)))
-            for product in random.sample(products, num_items):
-                qty = Decimal(str(round(random.uniform(1, 10), 2)))
+        # Paso 1: Compras para productos físicos (generar stock inicial)
+        self._info("Paso 1: Compras a proveedores para generar stock.")
+        for product in physical_products:
+            try:
+                op_date = random.choice(date_list)
+                supplier = random.choice(suppliers)
+                operation = create_operation(
+                    company=company,
+                    type="purchase",
+                    date=op_date,
+                    supplier=supplier,
+                    created_by=user,
+                )
                 unit_price = product.price * Decimal(str(round(random.uniform(0.6, 0.85), 2)))
                 add_item_to_operation(
                     operation=operation,
                     product=product,
-                    quantity=qty,
+                    quantity=stock_per_product,
                     unit_price=unit_price,
                 )
-            confirm_operation(operation, user=user)
-            self._success(f"Compra #{operation.number} - {supplier.name} - ${operation.total}")
+                confirm_operation(operation, user=user)
+                self._success(f"Compra #{operation.number} - {product.name} - stock +{stock_per_product}")
+            except ValidationError as e:
+                self._warning(f"Compra omitida ({product.name}): {e}")
+
+        # Opcional: 1–2 compras adicionales aleatorias (mezcla de productos)
+        for _ in range(2):
+            try:
+                op_date = random.choice(date_list)
+                supplier = random.choice(suppliers)
+                operation = create_operation(
+                    company=company,
+                    type="purchase",
+                    date=op_date,
+                    supplier=supplier,
+                    created_by=user,
+                )
+                num_items = random.randint(1, min(3, len(products)))
+                for product in random.sample(products, num_items):
+                    qty = Decimal(str(round(random.uniform(1, 8), 2)))
+                    unit_price = product.price * Decimal(str(round(random.uniform(0.6, 0.85), 2)))
+                    add_item_to_operation(
+                        operation=operation,
+                        product=product,
+                        quantity=qty,
+                        unit_price=unit_price,
+                    )
+                confirm_operation(operation, user=user)
+                self._success(f"Compra #{operation.number} - {supplier.name} - ${operation.total}")
+            except ValidationError as e:
+                self._warning(f"Compra omitida: {e}")
+
+        # Paso 2: Ventas (cantidades <= stock disponible por producto)
+        self._info("Paso 2: Ventas (cantidades respetando stock).")
+        for i in range(10):
+            try:
+                # Refrescar productos para tener stock actualizado
+                products = list(Product.objects.filter(company=company, active=True))
+                # Productos vendibles: servicios siempre; productos con stock > 0
+                sellable = [
+                    p for p in products
+                    if p.type == "service" or (Decimal(str(p.stock or 0)) > 0)
+                ]
+                if not sellable:
+                    self._warning("Sin stock ni servicios para más ventas. Se omiten el resto.")
+                    break
+
+                op_date = random.choice(date_list)
+                customer = random.choice(customers)
+                operation = create_operation(
+                    company=company,
+                    type="sale",
+                    date=op_date,
+                    customer=customer,
+                    created_by=user,
+                )
+                num_items = random.randint(1, min(3, len(sellable)))
+                chosen = random.sample(sellable, num_items)
+                for product in chosen:
+                    if product.type == "service":
+                        qty = Decimal(str(round(random.uniform(1, 5), 2)))
+                    else:
+                        available = Decimal(str(product.stock or 0)).quantize(Decimal("0.01"))
+                        if available <= 0:
+                            continue
+                        # Cantidad deseada 1–5, nunca mayor al stock disponible
+                        desired = Decimal(str(round(random.uniform(1, 5), 2)))
+                        qty = min(desired, available)
+                        if qty <= 0:
+                            continue
+                    unit_price = product.price * Decimal(str(round(random.uniform(0.95, 1.05), 2)))
+                    add_item_to_operation(
+                        operation=operation,
+                        product=product,
+                        quantity=qty,
+                        unit_price=unit_price,
+                    )
+                if not operation.items.exists():
+                    operation.delete()
+                    self._warning("Venta sin ítems válidos omitida.")
+                    continue
+                confirm_operation(operation, user=user)
+                self._success(f"Venta #{operation.number} - {customer.name} - ${operation.total}")
+            except ValidationError as e:
+                self._warning(f"Venta omitida: {e}")

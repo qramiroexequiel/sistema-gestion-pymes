@@ -315,14 +315,6 @@
         return (document.documentElement.getAttribute('data-bs-theme') || 'light') === 'dark';
     }
 
-    function getChartScaleColors() {
-        var dark = isDarkTheme();
-        return {
-            gridColor: dark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-            tickColor: dark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.75)'
-        };
-    }
-
     function destroyDashboardCharts() {
         if (window.dashboardCharts.salesVsPurchases) {
             window.dashboardCharts.salesVsPurchases.destroy();
@@ -341,7 +333,9 @@
         var topCustomersEl = document.getElementById('chartTopCustomersData');
         if (!salesPurchasesEl && !topCustomersEl) return;
 
-        var scaleColors = getChartScaleColors();
+        var dark = isDarkTheme();
+        var text_color = dark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)';
+        var gridColor = dark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)';
 
         if (salesPurchasesEl) {
             var salesPurchasesData = JSON.parse(salesPurchasesEl.textContent);
@@ -366,17 +360,17 @@
                         scales: {
                             x: {
                                 grid: { display: false },
-                                ticks: { maxRotation: 45, font: { size: 11 }, color: scaleColors.tickColor }
+                                ticks: { maxRotation: 45, font: { size: 11 }, color: text_color }
                             },
                             y: {
                                 beginAtZero: true,
-                                grid: { color: scaleColors.gridColor },
+                                grid: { color: gridColor },
                                 border: { display: false },
-                                ticks: { callback: formatARS, font: { size: 11 }, color: scaleColors.tickColor }
+                                ticks: { callback: formatARS, font: { size: 11 }, color: text_color }
                             }
                         },
                         plugins: {
-                            legend: { position: 'top', labels: { boxWidth: 14, padding: 16, useBorderRadius: true, color: scaleColors.tickColor } },
+                            legend: { position: 'top', labels: { boxWidth: 14, padding: 16, useBorderRadius: true, color: text_color } },
                             tooltip: {
                                 backgroundColor: 'rgba(26, 31, 46, 0.95)',
                                 padding: 12,
@@ -413,7 +407,7 @@
                         cutout: '55%',
                         layout: { padding: 8 },
                         plugins: {
-                            legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12, color: scaleColors.tickColor } },
+                            legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12, color: text_color } },
                             tooltip: {
                                 backgroundColor: 'rgba(26, 31, 46, 0.95)',
                                 padding: 12,
@@ -447,6 +441,7 @@
         destroyDashboardCharts();
         initDashboardCharts();
     });
+    /* Re-renderizado: al cambiar tema se destruyen los gráficos y se vuelven a crear con los colores correctos. */
 })();
 </script>
 {% endif %}
