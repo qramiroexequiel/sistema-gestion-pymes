@@ -1,0 +1,106 @@
+<div id="customers-list" hx-target="this" hx-swap="outerHTML">
+{% if customers %}
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Teléfono</th>
+                            <th>CUIT/RUT/NIT</th>
+                            <th>Estado</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer in customers %}
+                            <tr style="cursor: pointer;" onclick="window.location='{% url 'customers:detail' customer.pk %}'">
+                                <td>
+                                    <strong style="color: var(--color-gray-900); font-weight: 600;">{{ customer.code }}</strong>
+                                </td>
+                                <td>
+                                    <div style="font-weight: 500; color: var(--color-gray-800);">
+                                        <i class="fas fa-user me-2" style="color: var(--color-gray-400);"></i>
+                                        {{ customer.name }}
+                                    </div>
+                                </td>
+                                <td style="color: var(--color-gray-600);">
+                                    {% if customer.email %}
+                                        <i class="fas fa-envelope me-1" style="color: var(--color-gray-400);"></i>
+                                        {{ customer.email }}
+                                    {% else %}
+                                        <span style="color: var(--color-gray-400);">-</span>
+                                    {% endif %}
+                                </td>
+                                <td style="color: var(--color-gray-600);">
+                                    {% if customer.phone %}
+                                        <i class="fas fa-phone me-1" style="color: var(--color-gray-400);"></i>
+                                        {{ customer.phone }}
+                                    {% else %}
+                                        <span style="color: var(--color-gray-400);">-</span>
+                                    {% endif %}
+                                </td>
+                                <td style="color: var(--color-gray-600);">
+                                    {{ customer.tax_id|default:"-" }}
+                                </td>
+                                <td>
+                                    {% if customer.active %}
+                                        <span class="badge" style="background-color: var(--color-success); color: white;">
+                                            <i class="fas fa-check-circle me-1"></i>
+                                            Activo
+                                        </span>
+                                    {% else %}
+                                        <span class="badge" style="background-color: var(--color-gray-400); color: white;">
+                                            <i class="fas fa-times-circle me-1"></i>
+                                            Inactivo
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center" onclick="event.stopPropagation();">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'customers:detail' customer.pk %}" 
+                                           class="btn btn-outline-primary" 
+                                           title="Ver detalle"
+                                           style="border-color: var(--color-primary); color: var(--color-primary);">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'customers:update' customer.pk %}" 
+                                           class="btn btn-outline-secondary" 
+                                           title="Editar"
+                                           style="border-color: var(--color-gray-400); color: var(--color-gray-600);">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'customers:delete' customer.pk %}" 
+                                           class="btn btn-outline-danger" 
+                                           title="Eliminar"
+                                           style="border-color: var(--color-danger); color: var(--color-danger);">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% include 'includes/pagination.html' with target_id='#customers-list' %}
+        </div>
+    </div>
+{% else %}
+    <div class="empty-state-container">
+        <div class="empty-state-icon">
+            <i class="fas fa-users"></i>
+        </div>
+            <div class="empty-state-title">Aún no tenés clientes registrados</div>
+            <div class="empty-state-text">Agregá tu primer cliente. Una vez guardado, lo podés usar siempre sin volver a escribir lo mismo.</div>
+        <a href="{% url 'customers:create' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>
+            Agregar Primer Cliente
+        </a>
+    </div>
+{% endif %}
+</div>

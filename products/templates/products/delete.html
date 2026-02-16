@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar Producto/Servicio{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Eliminar Producto/Servicio</h4>
+            </div>
+            <div class="card-body">
+                <p>¿Está seguro que desea eliminar el producto/servicio <strong>{{ product.name }}</strong>?</p>
+                <p class="text-muted">Esta acción no se puede deshacer.</p>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Sí, eliminar
+                        </button>
+                        <a href="{% url 'products:detail' product.pk %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

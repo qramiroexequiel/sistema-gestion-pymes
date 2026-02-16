@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}Resumen de Ventas por Cliente{% endblock %}
+
+{% block content %}
+<!-- Section Header -->
+<div class="section-header">
+    <div class="section-header-left">
+        <h1 class="section-title">Resumen por Cliente</h1>
+        <p class="section-subtitle">Controlá cuánto vendiste a cada cliente. Identificá tus mejores clientes sin volver a escribir lo mismo.</p>
+    </div>
+    <div class="section-actions">
+        <a href="{% url 'reports:summary_by_customer' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}&format=csv" class="btn btn-outline-success">
+            <i class="fas fa-file-csv me-2"></i>Exportar CSV
+        </a>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Fecha Inicio</label>
+                <input type="date" name="start_date" class="form-control" 
+                       value="{{ start_date|date:'Y-m-d' }}" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Fecha Fin</label>
+                <input type="date" name="end_date" class="form-control" 
+                       value="{{ end_date|date:'Y-m-d' }}" required>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search me-2"></i>Buscar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Resultados -->
+{% if customers %}
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2"></i>
+                Resumen del {{ start_date|date:"d/m/Y" }} al {{ end_date|date:"d/m/Y" }}
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Código</th>
+                            <th class="text-center">Cantidad de Ventas</th>
+                            <th class="text-end">Total Ventas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer in customers %}
+                            <tr style="cursor: pointer;" onclick="window.location='{% url 'customers:detail' customer.pk %}'">
+                                <td>
+                                    <div style="font-weight: 600;">
+                                        <i class="fas fa-user me-1" style="color: var(--text-tertiary); font-size: 0.875rem;"></i>
+                                        {{ customer.name }}
+                                    </div>
+                                </td>
+                                <td style="color: var(--text-secondary);">{{ customer.code }}</td>
+                                <td class="text-center">
+                                    <span class="badge badge-info">{{ customer.total_operations }}</span>
+                                </td>
+                                <td class="text-end">
+                                    <strong style="font-weight: 700; color: var(--accent-success); font-size: 1rem;">${{ customer.total_sales|default:0|floatformat:2 }}</strong>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot style="background-color: var(--bg-tertiary);">
+                        <tr>
+                            <th colspan="3" class="text-end">TOTAL GENERAL:</th>
+                            <th class="text-end" style="font-weight: 700; color: var(--accent-success); font-size: 1.125rem;">${{ total_general|default:0|floatformat:2 }}</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div class="empty-state-container">
+        <div class="empty-state-icon">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="empty-state-title">No hay ventas por cliente en este período</div>
+        <div class="empty-state-text">No se encontraron ventas entre {{ start_date|date:"d/m/Y" }} y {{ end_date|date:"d/m/Y" }}. Probá con otro rango de fechas.</div>
+    </div>
+{% endif %}
+{% endblock %}
+

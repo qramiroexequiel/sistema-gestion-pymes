@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Clientes{% endblock %}
+
+{% block content %}
+<!-- Section Header con Acciones -->
+<div class="section-header">
+    <div class="section-header-left">
+        <h1 class="section-title">Clientes</h1>
+        <p class="section-subtitle">Todos tus clientes en un solo lugar. Sin volver a escribir lo mismo cada vez.</p>
+    </div>
+    <div class="section-actions">
+        <a href="{% url 'customers:export_csv' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-outline-success">
+            <i class="fas fa-file-csv me-2"></i>Exportar CSV
+        </a>
+        <a href="{% url 'customers:create' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Nuevo Cliente
+        </a>
+    </div>
+</div>
+
+<!-- Buscador y Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" 
+              hx-get="{% url 'customers:list' %}"
+              hx-target="#customers-list"
+              hx-push-url="true"
+              hx-trigger="submit, change from:select">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-7">
+                    <label class="form-label fw-semibold">
+                        <i class="fas fa-search me-1"></i>Buscar
+                    </label>
+                    <div class="input-group">
+                        <input type="text" 
+                               name="search" 
+                               class="form-control" 
+                               placeholder="Buscar por nombre, email o CUIT..." 
+                               value="{{ search }}"
+                               autocomplete="off">
+                        {% if search %}
+                            <a href="{% url 'customers:list' %}{% if active_filter %}?active={{ active_filter }}{% endif %}" 
+                               class="btn btn-outline-secondary" 
+                               hx-get="{% url 'customers:list' %}{% if active_filter %}?active={{ active_filter }}{% endif %}"
+                               hx-target="#customers-list"
+                               hx-swap="outerHTML"
+                               hx-push-url="true"
+                               title="Limpiar búsqueda">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Estado</label>
+                    <select name="active" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="1" {% if active_filter == '1' %}selected{% endif %}>Activos</option>
+                        <option value="0" {% if active_filter == '0' %}selected{% endif %}>Inactivos</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100" title="Aplicar filtros">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de Clientes -->
+<div id="customers-list">
+    {% include 'customers/_customers_list.html' %}
+</div>
+{% endblock %}

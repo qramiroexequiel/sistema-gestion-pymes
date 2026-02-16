@@ -1,0 +1,54 @@
+# --- Python compilados ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+
+# --- Entorno virtual ---
+venv/
+env/
+.venv/
+
+# --- CRÍTICO: Base de datos SQLite (no subir datos reales o de prueba) ---
+*.sqlite3
+db.sqlite3
+
+# --- Archivos estáticos recolectados y subidas de usuario ---
+staticfiles/
+media/
+
+# --- SEGURIDAD: Variables de entorno (secretos, claves, URLs de DB) ---
+.env
+.env.local
+.env.*.local
+
+# --- Configuración de IDE ---
+.vscode/
+.cursor/
+.idea/
+*.swp
+*.swo
+*~
+
+# --- Logs (generados en runtime y producción) ---
+logs/
+*.log
+
+# --- Django / Python proyecto ---
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+
+# --- Tests y cobertura ---
+.coverage
+htmlcov/
+.tox/
+.pytest_cache/
+
+# --- Sistema operativo ---
+.DS_Store
+Thumbs.db

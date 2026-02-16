@@ -1,0 +1,208 @@
+{% extends 'base_auth.html' %}
+
+{% block title %}Iniciar Sesión{% endblock %}
+
+{% block extra_css %}
+<style>
+    .login-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, var(--dark-base) 0%, var(--dark-surface) 100%);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .login-container::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
+        animation: pulse 8s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 0.4;
+            transform: scale(1);
+        }
+        50% {
+            opacity: 0.6;
+            transform: scale(1.1);
+        }
+    }
+    
+    .login-card {
+        width: 100%;
+        max-width: 420px;
+        padding: var(--spacing-xl);
+        position: relative;
+        z-index: 1;
+    }
+    
+    .login-card .card {
+        background: var(--dark-surface-elevated);
+        border: 1px solid var(--dark-border);
+        box-shadow: var(--shadow-xl), var(--glow-primary);
+        backdrop-filter: blur(20px);
+    }
+    
+    .login-card .card-header {
+        background: linear-gradient(135deg, var(--accent-primary), var(--accent-primary-hover));
+        border: none;
+        padding: var(--spacing-lg);
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .login-card .card-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+        animation: rotate 10s linear infinite;
+    }
+    
+    @keyframes rotate {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+    
+    .login-card .card-header h4 {
+        position: relative;
+        z-index: 1;
+        font-weight: 700;
+        font-size: 1.5rem;
+        letter-spacing: var(--letter-spacing-tight);
+        margin: 0;
+    }
+    
+    .login-card .card-header i {
+        font-size: 1.75rem;
+        margin-right: var(--spacing-xs);
+        filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+    }
+    
+    .login-card .card-body {
+        padding: var(--spacing-xl);
+    }
+    
+    .login-card .form-label {
+        font-weight: 600;
+        margin-bottom: var(--spacing-xs);
+        font-size: 0.875rem;
+        letter-spacing: var(--letter-spacing-normal);
+        color: var(--text-primary);
+    }
+    
+    .login-card .form-control {
+        padding: 1rem 1.25rem;
+        font-size: 0.9375rem;
+        border: 1px solid var(--dark-border);
+        background: var(--dark-surface);
+        color: var(--text-primary);
+        transition: all 0.3s var(--ease-smooth);
+    }
+    
+    .login-card .form-control:focus {
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 0 3px var(--accent-primary-glow), var(--glow-primary);
+        background: var(--dark-surface-elevated);
+        transform: scale(1.01);
+    }
+    
+    .login-card .btn-primary {
+        padding: 1rem;
+        font-size: 1rem;
+        font-weight: 700;
+        letter-spacing: var(--letter-spacing-normal);
+        margin-top: var(--spacing-md);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .login-card .btn-primary::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        transform: translate(-50%, -50%);
+        transition: width 0.6s var(--ease-smooth), height 0.6s var(--ease-smooth);
+    }
+    
+    .login-card .btn-primary:hover::before {
+        width: 400px;
+        height: 400px;
+    }
+    
+    .login-card .btn-primary i {
+        position: relative;
+        z-index: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <div class="card">
+            <div class="card-header">
+                <h4>
+                    <i class="fas fa-sign-in-alt"></i>
+                    Iniciar Sesión
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label for="{{ form.username.id_for_label }}" class="form-label">
+                            <i class="fas fa-user me-2" style="color: var(--text-tertiary);"></i>
+                            Usuario
+                        </label>
+                        <input type="text" 
+                               name="{{ form.username.name }}" 
+                               class="form-control" 
+                               id="{{ form.username.id_for_label }}" 
+                               required 
+                               autofocus
+                               placeholder="Ingrese su nombre de usuario">
+                    </div>
+                    <div class="mb-4">
+                        <label for="{{ form.password.id_for_label }}" class="form-label">
+                            <i class="fas fa-lock me-2" style="color: var(--text-tertiary);"></i>
+                            Contraseña
+                        </label>
+                        <input type="password" 
+                               name="{{ form.password.name }}" 
+                               class="form-control" 
+                               id="{{ form.password.id_for_label }}" 
+                               required
+                               placeholder="Ingrese su contraseña">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-sign-in-alt me-2"></i>
+                        Entrar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

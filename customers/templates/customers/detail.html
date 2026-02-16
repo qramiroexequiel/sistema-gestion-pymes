@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Cliente: {{ customer.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-user"></i> {{ customer.name }}</h4>
+                {% if customer.active %}
+                    <span class="badge bg-success">Activo</span>
+                {% else %}
+                    <span class="badge bg-secondary">Inactivo</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Código:</dt>
+                    <dd class="col-sm-9"><strong>{{ customer.code }}</strong></dd>
+                    
+                    <dt class="col-sm-3">Nombre:</dt>
+                    <dd class="col-sm-9">{{ customer.name }}</dd>
+                    
+                    {% if customer.tax_id %}
+                        <dt class="col-sm-3">CUIT/RUT/NIT:</dt>
+                        <dd class="col-sm-9">{{ customer.tax_id }}</dd>
+                    {% endif %}
+                    
+                    {% if customer.email %}
+                        <dt class="col-sm-3">Email:</dt>
+                        <dd class="col-sm-9">{{ customer.email }}</dd>
+                    {% endif %}
+                    
+                    {% if customer.phone %}
+                        <dt class="col-sm-3">Teléfono:</dt>
+                        <dd class="col-sm-9">{{ customer.phone }}</dd>
+                    {% endif %}
+                    
+                    {% if customer.address %}
+                        <dt class="col-sm-3">Dirección:</dt>
+                        <dd class="col-sm-9">{{ customer.address|linebreaks }}</dd>
+                    {% endif %}
+                    
+                    {% if customer.notes %}
+                        <dt class="col-sm-3">Notas:</dt>
+                        <dd class="col-sm-9">{{ customer.notes|linebreaks }}</dd>
+                    {% endif %}
+                    
+                    <dt class="col-sm-3">Fecha de creación:</dt>
+                    <dd class="col-sm-9">{{ customer.created_at|date:"d/m/Y H:i" }}</dd>
+                    
+                    {% if customer.created_by %}
+                        <dt class="col-sm-3">Creado por:</dt>
+                        <dd class="col-sm-9">{{ customer.created_by.get_full_name|default:customer.created_by.username }}</dd>
+                    {% endif %}
+                </dl>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'customers:list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+                <a href="{% url 'customers:update' customer.pk %}" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> Editar
+                </a>
+                <a href="{% url 'customers:delete' customer.pk %}" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Eliminar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}Reportes{% endblock %}
+
+{% block content %}
+<!-- Section Header -->
+<div class="section-header">
+    <div class="section-header-left">
+        <h1 class="section-title">Reportes</h1>
+        <p class="section-subtitle">Información clave para tomar mejores decisiones. Analizá ventas, compras y detectá oportunidades.</p>
+    </div>
+</div>
+
+<!-- Grid de Reportes -->
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header" style="background: linear-gradient(135deg, var(--accent-success), var(--accent-success)); color: white;">
+                <h5 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i> Ventas por Período</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text mb-0">Analizá tus ventas en cualquier período. Detectá tendencias, compará meses y exportá a Excel.</p>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'reports:sales_by_period' %}" class="btn btn-success w-100">
+                    <i class="fas fa-file-alt me-2"></i> Ver Reporte de Ventas
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header" style="background: linear-gradient(135deg, var(--accent-info), var(--accent-info)); color: white;">
+                <h5 class="mb-0"><i class="fas fa-shopping-cart me-2"></i> Compras por Período</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text mb-0">Revisá todas tus compras en un período. Controlá gastos, optimizá compras y exportá a Excel.</p>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'reports:purchases_by_period' %}" class="btn btn-info w-100">
+                    <i class="fas fa-file-alt me-2"></i> Ver Reporte de Compras
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header" style="background: linear-gradient(135deg, var(--accent-primary), var(--accent-primary)); color: white;">
+                <h5 class="mb-0"><i class="fas fa-users me-2"></i> Resumen por Cliente</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text mb-0">Ventas agrupadas por cliente. Identificá tus mejores clientes y oportunidades de crecimiento.</p>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'reports:summary_by_customer' %}" class="btn btn-primary w-100">
+                    <i class="fas fa-file-alt me-2"></i> Ver Resumen por Cliente
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header" style="background: linear-gradient(135deg, var(--accent-warning), var(--accent-warning)); color: white;">
+                <h5 class="mb-0"><i class="fas fa-truck me-2"></i> Resumen por Proveedor</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text mb-0">Compras agrupadas por proveedor. Controlá gastos por proveedor y negociá mejores condiciones.</p>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'reports:summary_by_supplier' %}" class="btn btn-warning w-100">
+                    <i class="fas fa-file-alt me-2"></i> Ver Resumen por Proveedor
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

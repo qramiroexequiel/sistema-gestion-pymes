@@ -1,0 +1,4 @@
+-r base.txt
+
+# Production specific packages (agregar según necesidades)
+

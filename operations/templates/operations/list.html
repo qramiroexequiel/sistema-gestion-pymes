@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}Operaciones{% endblock %}
+
+{% block content %}
+<!-- Section Header con Acciones -->
+<div class="section-header">
+    <div class="section-header-left">
+        <h1 class="section-title">Ventas y Compras</h1>
+        <p class="section-subtitle">Todo en un solo lugar. Controlá todas tus operaciones sin volver a escribir lo mismo.</p>
+    </div>
+    <div class="section-actions">
+        <a href="{% url 'operations:export_csv' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-outline-success">
+            <i class="fas fa-file-csv me-2"></i>Exportar CSV
+        </a>
+                    <a href="{% url 'operations:create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Nueva Venta o Compra
+                    </a>
+    </div>
+</div>
+
+<!-- Buscador y Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" 
+              hx-get="{% url 'operations:list' %}"
+              hx-target="#operations-list"
+              hx-push-url="true"
+              hx-trigger="submit, change from:select">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label fw-semibold">
+                        <i class="fas fa-search me-1"></i>Buscar
+                    </label>
+                    <div class="input-group">
+                        <input type="text" 
+                               name="search" 
+                               class="form-control" 
+                               placeholder="Buscar por número, cliente o proveedor..." 
+                               value="{{ search }}"
+                               autocomplete="off">
+                        {% if search %}
+                            <a href="{% url 'operations:list' %}{% if type_filter %}?type={{ type_filter }}{% endif %}{% if status_filter %}{% if type_filter %}&{% else %}?{% endif %}status={{ status_filter }}{% endif %}" 
+                               class="btn btn-outline-secondary" 
+                               hx-get="{% url 'operations:list' %}{% if type_filter %}?type={{ type_filter }}{% endif %}{% if status_filter %}{% if type_filter %}&{% else %}?{% endif %}status={{ status_filter }}{% endif %}"
+                               hx-target="#operations-list"
+                               hx-swap="outerHTML"
+                               hx-push-url="true"
+                               title="Limpiar búsqueda">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Tipo</label>
+                    <select name="type" class="form-select">
+                        <option value="">Todos los tipos</option>
+                        <option value="sale" {% if type_filter == 'sale' %}selected{% endif %}>Ventas</option>
+                        <option value="purchase" {% if type_filter == 'purchase' %}selected{% endif %}>Compras</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Estado</label>
+                    <select name="status" class="form-select">
+                        <option value="">Todos los estados</option>
+                        <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Borrador</option>
+                        <option value="confirmed" {% if status_filter == 'confirmed' %}selected{% endif %}>Confirmado</option>
+                        <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelado</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100" title="Aplicar filtros">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de Operaciones -->
+{% include 'operations/_operations_list.html' %}
+{% endblock %}

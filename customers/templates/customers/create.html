@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Nuevo Cliente{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header" style="background: var(--accent-primary); color: white;">
+                <h4 class="mb-0"><i class="fas fa-user-plus me-2"></i>Nuevo Cliente</h4>
+                <small class="opacity-75">Completá la información básica. Podés agregar más detalles después.</small>
+            </div>
+            <div class="card-body">
+                {% crispy form %}
+            </div>
+            <div class="card-footer bg-transparent border-top">
+                <a href="{% url 'customers:list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

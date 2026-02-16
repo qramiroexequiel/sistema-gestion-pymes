@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Nuevo Producto/Servicio{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header" style="background: var(--accent-primary); color: white;">
+                <h4 class="mb-0"><i class="fas fa-box me-2"></i>Nuevo Producto o Servicio</h4>
+                <small class="opacity-75">Agregá tu producto o servicio al catálogo. Una vez guardado, podrás usarlo en tus operaciones.</small>
+            </div>
+            <div class="card-body">
+                {% crispy form %}
+            </div>
+            <div class="card-footer bg-transparent border-top">
+                <a href="{% url 'products:list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

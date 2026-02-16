@@ -1,0 +1,34 @@
+{% comment %}
+Componente reutilizable para headers de sección.
+Incluye título y subtítulo. NO incluye acciones porque Django no permite template tags dentro de strings.
+
+Uso básico (sin acciones):
+{% include 'partials/section_header.html' with title="Título" subtitle="Subtítulo" %}
+
+Uso con acciones (definir TODO el section-header directamente en el template):
+<div class="section-header">
+  <div class="section-header-left">
+    <h1 class="section-title">Título</h1>
+    <p class="section-subtitle">Subtítulo</p>
+  </div>
+  <div class="section-actions">
+    <a href="{% url 'some:view' %}" class="btn btn-primary">Acción</a>
+  </div>
+</div>
+
+Parámetros:
+- title: Título de la sección (requerido)
+- subtitle: Subtítulo/descripción (opcional)
+{% endcomment %}
+
+<div class="section-header">
+    <div class="section-header-left">
+        <h1 class="section-title">{{ title }}</h1>
+        {% if subtitle %}
+            <p class="section-subtitle">{{ subtitle }}</p>
+        {% endif %}
+    </div>
+    <div class="section-actions">
+        {% comment %}Las acciones deben definirse directamente en el template padre{% endcomment %}
+    </div>
+</div>

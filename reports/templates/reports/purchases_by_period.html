@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block title %}Reporte de Compras por Período{% endblock %}
+
+{% block content %}
+<!-- Section Header -->
+<div class="section-header">
+    <div class="section-header-left">
+        <h1 class="section-title">Compras por Período</h1>
+        <p class="section-subtitle">Controlá tus compras en cualquier período. Todo en un solo lugar para optimizar tus gastos.</p>
+    </div>
+    <div class="section-actions">
+        <a href="{% url 'reports:purchases_by_period' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}&format=csv" class="btn btn-outline-success">
+            <i class="fas fa-file-csv me-2"></i>Exportar CSV
+        </a>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Fecha Inicio</label>
+                <input type="date" name="start_date" class="form-control" 
+                       value="{{ start_date|date:'Y-m-d' }}" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Fecha Fin</label>
+                <input type="date" name="end_date" class="form-control" 
+                       value="{{ end_date|date:'Y-m-d' }}" required>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search me-2"></i>Buscar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Resultados -->
+{% if operations %}
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2"></i>
+                Compras del {{ start_date|date:"d/m/Y" }} al {{ end_date|date:"d/m/Y" }}
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Número</th>
+                            <th>Fecha</th>
+                            <th>Proveedor</th>
+                            <th class="text-end">Subtotal</th>
+                            <th class="text-end">Impuesto</th>
+                            <th class="text-end">Total</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for operation in operations %}
+                            <tr style="cursor: pointer;" onclick="window.location='{% url 'operations:detail' operation.pk %}'">
+                                <td>
+                                    <strong style="font-weight: 700; font-size: 0.9375rem;">{{ operation.number }}</strong>
+                                </td>
+                                <td style="color: var(--text-secondary);">{{ operation.date|date:"d/m/Y" }}</td>
+                                <td>
+                                    {% if operation.supplier %}
+                                        <div style="font-weight: 600;">
+                                            <i class="fas fa-truck me-1" style="color: var(--text-tertiary); font-size: 0.875rem;"></i>
+                                            {{ operation.supplier.name }}
+                                        </div>
+                                    {% else %}
+                                        <span style="color: var(--text-tertiary);">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <strong>${{ operation.subtotal|floatformat:2 }}</strong>
+                                </td>
+                                <td class="text-end">
+                                    <strong>${{ operation.tax|floatformat:2 }}</strong>
+                                </td>
+                                <td class="text-end">
+                                    <strong style="font-weight: 700; color: var(--accent-info);">${{ operation.total|floatformat:2 }}</strong>
+                                </td>
+                                <td>
+                                    {% if operation.status == 'confirmed' %}
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-check-circle me-1"></i>Confirmado
+                                        </span>
+                                    {% elif operation.status == 'draft' %}
+                                        <span class="badge badge-secondary">
+                                            <i class="fas fa-edit me-1"></i>Borrador
+                                        </span>
+                                    {% elif operation.status == 'cancelled' %}
+                                        <span class="badge badge-danger">
+                                            <i class="fas fa-times-circle me-1"></i>Cancelado
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot style="background-color: var(--bg-tertiary);">
+                        <tr>
+                            <th colspan="3" class="text-end">TOTALES:</th>
+                            <th class="text-end">${{ totals.subtotal|default:0|floatformat:2 }}</th>
+                            <th class="text-end">${{ totals.tax|default:0|floatformat:2 }}</th>
+                            <th class="text-end" style="font-weight: 700; color: var(--accent-info); font-size: 1.125rem;">${{ totals.total|default:0|floatformat:2 }}</th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div class="empty-state-container">
+        <div class="empty-state-icon">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="empty-state-title">No hay compras en este período</div>
+        <div class="empty-state-text">No se encontraron compras entre {{ start_date|date:"d/m/Y" }} y {{ end_date|date:"d/m/Y" }}. Probá con otro rango de fechas.</div>
+    </div>
+{% endif %}
+{% endblock %}
+

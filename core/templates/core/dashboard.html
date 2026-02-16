@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Section Header -->
+<div class="section-header">
+    <div class="section-header-left">
+        <h1 class="section-title">¿Cómo va tu negocio?</h1>
+        <p class="section-subtitle">Vista rápida de tus ventas, compras y operaciones pendientes.</p>
+    </div>
+</div>
+
+<!-- Mensaje de bienvenida sutil -->
+{% if not has_data %}
+<div class="alert alert-info border-0 mb-4" style="background-color: var(--accent-primary-light); border-left: 3px solid var(--accent-primary);">
+    <i class="fas fa-info-circle me-2"></i>
+    <strong>Bienvenido a Suite Business.</strong> Empezá registrando una venta o compra. Podés guardarla como borrador y confirmarla cuando esté lista.
+</div>
+{% endif %}
+
+<!-- KPIs Principales -->
+<div class="row g-4 mb-4">
+    <!-- Total Ventas Históricas -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <h6 class="text-muted mb-1">Total Ventas</h6>
+                        <h3 class="mb-0">${{ total_sales|floatformat:2|default:"0.00" }}</h3>
+                    </div>
+                    <div style="font-size: 2.5rem; color: var(--accent-success); opacity: 0.6;">
+                        <i class="fas fa-arrow-trend-up"></i>
+                    </div>
+                </div>
+                <small class="text-muted">{{ total_operations|default:0 }} operación{{ total_operations|pluralize:"es" }} confirmada{{ total_operations|pluralize:"s" }}</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Total Compras Históricas -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <h6 class="text-muted mb-1">Total Compras</h6>
+                        <h3 class="mb-0">${{ total_purchases|floatformat:2|default:"0.00" }}</h3>
+                    </div>
+                    <div style="font-size: 2.5rem; color: var(--accent-info); opacity: 0.6;">
+                        <i class="fas fa-arrow-trend-down"></i>
+                    </div>
+                </div>
+                <small class="text-muted">histórico completo</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Clientes Activos -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <h6 class="text-muted mb-1">Clientes</h6>
+                        <h3 class="mb-0">{{ active_customers|default:0 }}</h3>
+                    </div>
+                    <div style="font-size: 2.5rem; color: var(--accent-primary); opacity: 0.6;">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+                <small class="text-muted">clientes activos</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Productos Activos -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <h6 class="text-muted mb-1">Productos</h6>
+                        <h3 class="mb-0">{{ active_products|default:0 }}</h3>
+                    </div>
+                    <div style="font-size: 2.5rem; color: var(--accent-warning); opacity: 0.6;">
+                        <i class="fas fa-box"></i>
+                    </div>
+                </div>
+                <small class="text-muted">productos activos</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- KPIs Secundarios (Mes Actual) -->
+{% if sales_month_total > 0 or purchases_month_total > 0 or pending_operations > 0 %}
+<div class="row g-4 mb-5">
+    <div class="col-12">
+        <h5 class="mb-3" style="font-weight: 600; color: var(--text-secondary); font-size: 0.9375rem; text-transform: uppercase; letter-spacing: 0.05em;">Este Mes</h5>
+    </div>
+    
+    <!-- Ventas del Mes -->
+    <div class="col-lg-4 col-md-6">
+        <div class="card" style="border-left: 3px solid var(--accent-success);">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div>
+                        <h6 class="text-muted mb-1" style="font-size: 0.875rem;">Ventas este mes</h6>
+                        <h4 class="mb-0" style="font-weight: 700;">${{ sales_month_total|floatformat:2|default:"0.00" }}</h4>
+                    </div>
+                </div>
+                <small class="text-muted">{{ sales_month_count|default:0 }} venta{{ sales_month_count|pluralize:"s" }}</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Compras del Mes -->
+    <div class="col-lg-4 col-md-6">
+        <div class="card" style="border-left: 3px solid var(--accent-info);">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div>
+                        <h6 class="text-muted mb-1" style="font-size: 0.875rem;">Compras este mes</h6>
+                        <h4 class="mb-0" style="font-weight: 700;">${{ purchases_month_total|floatformat:2|default:"0.00" }}</h4>
+                    </div>
+                </div>
+                <small class="text-muted">{{ purchases_month_count|default:0 }} compra{{ purchases_month_count|pluralize:"s" }}</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Operaciones Pendientes -->
+    <div class="col-lg-4 col-md-6">
+        <div class="card" style="border-left: 3px solid var(--accent-warning);">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div>
+                        <h6 class="text-muted mb-1" style="font-size: 0.875rem;">Pendientes</h6>
+                        <h4 class="mb-0" style="font-weight: 700;">{{ pending_operations|default:0 }}</h4>
+                    </div>
+                </div>
+                <small class="text-muted">operaciones en borrador</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Acciones Rápidas -->
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Acciones Rápidas</h5>
+                <small class="text-muted">Lo que más vas a usar día a día</small>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'operations:create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Nueva Venta o Compra
+                    </a>
+                    <a href="{% url 'operations:list' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-list me-2"></i>Ver Todas las Operaciones
+                    </a>
+                    <div class="row g-2 mt-2">
+                        <div class="col-6">
+                            <a href="{% url 'customers:list' %}" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-users me-2"></i>Clientes
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a href="{% url 'suppliers:list' %}" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-truck me-2"></i>Proveedores
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a href="{% url 'products:list' %}" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-box me-2"></i>Productos
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Reportes</h5>
+                <small class="text-muted">Análisis para tomar mejores decisiones</small>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <a href="{% url 'reports:sales_by_period' %}" class="btn btn-outline-info w-100">
+                            <i class="fas fa-file-alt me-2"></i>Ventas
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{% url 'reports:purchases_by_period' %}" class="btn btn-outline-info w-100">
+                            <i class="fas fa-file-alt me-2"></i>Compras
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{% url 'reports:summary_by_customer' %}" class="btn btn-outline-info w-100">
+                            <i class="fas fa-user-tie me-2"></i>Por Cliente
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{% url 'reports:summary_by_supplier' %}" class="btn btn-outline-info w-100">
+                            <i class="fas fa-truck me-2"></i>Por Proveedor
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

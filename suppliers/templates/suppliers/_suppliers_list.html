@@ -1,0 +1,75 @@
+<div id="suppliers-list" hx-target="this" hx-swap="outerHTML">
+{% if suppliers %}
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Teléfono</th>
+                            <th>CUIT/RUT/NIT</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for supplier in suppliers %}
+                            <tr>
+                                <td><strong>{{ supplier.code }}</strong></td>
+                                <td>{{ supplier.name }}</td>
+                                <td>{{ supplier.email|default:"-" }}</td>
+                                <td>{{ supplier.phone|default:"-" }}</td>
+                                <td>{{ supplier.tax_id|default:"-" }}</td>
+                                <td>
+                                    {% if supplier.active %}
+                                        <span class="badge bg-success">Activo</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactivo</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'suppliers:detail' supplier.pk %}" 
+                                           class="btn btn-outline-info" 
+                                           title="Ver detalle">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'suppliers:update' supplier.pk %}" 
+                                           class="btn btn-outline-primary" 
+                                           title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'suppliers:delete' supplier.pk %}" 
+                                           class="btn btn-outline-danger" 
+                                           title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% include 'includes/pagination.html' with target_id='#suppliers-list' %}
+        </div>
+    </div>
+{% else %}
+    <div class="empty-state-container">
+        <div class="empty-state-icon">
+            <i class="fas fa-truck"></i>
+        </div>
+            <div class="empty-state-title">Aún no tenés proveedores registrados</div>
+            <div class="empty-state-text">Agregá tu primer proveedor. Una vez guardado, lo podés usar siempre sin volver a escribir lo mismo.</div>
+        <a href="{% url 'suppliers:create' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>
+            Agregar Primer Proveedor
+        </a>
+    </div>
+{% endif %}
+</div>
+

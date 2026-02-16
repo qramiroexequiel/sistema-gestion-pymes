@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}Seleccionar Empresa{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-building"></i> Seleccionar Empresa</h4>
+            </div>
+            <div class="card-body">
+                {% if memberships %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Seleccione una empresa:</label>
+                            {% for membership in memberships %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="company_id" 
+                                           id="company_{{ membership.company.id }}" 
+                                           value="{{ membership.company.id }}" required>
+                                    <label class="form-check-label" for="company_{{ membership.company.id }}">
+                                        <strong>{{ membership.company.name }}</strong>
+                                        <small class="text-muted">({{ membership.get_role_display }})</small>
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-check"></i> Seleccionar
+                        </button>
+                    </form>
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> No tiene empresas asociadas. Contacte al administrador.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

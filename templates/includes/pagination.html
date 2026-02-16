@@ -1,0 +1,107 @@
+{% comment %}
+Template parcial de paginación reutilizable.
+Mantiene todos los parámetros GET en los links de paginación.
+
+Uso:
+{% include 'includes/pagination.html' with target_id='#list-id' %}
+
+Parámetros esperados en contexto:
+- page_obj: objeto de paginación de Django
+- search: término de búsqueda (opcional)
+- type_filter: filtro de tipo (opcional)
+- status_filter: filtro de estado (opcional)
+- active_filter: filtro de activo (opcional)
+- target_id: ID del elemento HTMX target (opcional, default: '#list')
+{% endcomment %}
+
+{% if is_paginated %}
+    <div class="card-footer" style="background-color: var(--bg-secondary); border-top: 1px solid var(--border-color);">
+        {% if page_obj %}
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <small class="text-muted">
+                    Mostrando {{ page_obj.start_index }} - {{ page_obj.end_index }} de {{ page_obj.paginator.count }} resultado{{ page_obj.paginator.count|pluralize:"s" }}
+                </small>
+            </div>
+        {% endif %}
+        <nav aria-label="Paginación">
+            <ul class="pagination justify-content-center mb-0">
+                {% comment %} Construir querystring base {% endcomment %}
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" 
+                           href="?page=1{% if search %}&search={{ search|urlencode }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if active_filter %}&active={{ active_filter }}{% endif %}"
+                           {% if target_id %}hx-get="?page=1{% if search %}&search={{ search|urlencode }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if active_filter %}&active={{ active_filter }}{% endif %}"
+                           hx-target="{{ target_id }}"
+                           hx-swap="outerHTML"
+                           hx-push-url="true"{% endif %}>
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" 
+                           href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search|urlencode }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if active_filter %}&active={{ active_filter }}{% endif %}"
+                           {% if target_id %}hx-get="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search|urlencode }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if active_filter %}&active={{ active_filter }}{% endif %}"
+                           hx-target="{{ target_id }}"
+                           hx-swap="outerHTML"
+                           hx-push-url="true"{% endif %}>
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            <i class="fas fa-angle-double-left"></i>
+                        </span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            <i class="fas fa-angle-left"></i>
+                        </span>
+                    </li>
+                {% endif %}
+                
+                {% comment %} Página actual {% endcomment %}
+                <li class="page-item active">
+                    <span class="page-link" style="background-color: var(--accent-primary); border-color: var(--accent-primary); color: white; font-weight: 600;">
+                        {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+                
+                {% comment %} Siguiente página {% endcomment %}
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" 
+                           href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search|urlencode }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if active_filter %}&active={{ active_filter }}{% endif %}"
+                           {% if target_id %}hx-get="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search|urlencode }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if active_filter %}&active={{ active_filter }}{% endif %}"
+                           hx-target="{{ target_id }}"
+                           hx-swap="outerHTML"
+                           hx-push-url="true"{% endif %}>
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" 
+                           href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search|urlencode }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if active_filter %}&active={{ active_filter }}{% endif %}"
+                           {% if target_id %}hx-get="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search|urlencode }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if active_filter %}&active={{ active_filter }}{% endif %}"
+                           hx-target="{{ target_id }}"
+                           hx-swap="outerHTML"
+                           hx-push-url="true"{% endif %}>
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            <i class="fas fa-angle-right"></i>
+                        </span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            <i class="fas fa-angle-double-right"></i>
+                        </span>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+{% endif %}

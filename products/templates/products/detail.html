@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block title %}Producto: {{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-box"></i> {{ product.name }}</h4>
+                {% if product.active %}
+                    <span class="badge bg-success">Activo</span>
+                {% else %}
+                    <span class="badge bg-secondary">Inactivo</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Código:</dt>
+                    <dd class="col-sm-9"><strong>{{ product.code }}</strong></dd>
+                    
+                    <dt class="col-sm-3">Nombre:</dt>
+                    <dd class="col-sm-9">{{ product.name }}</dd>
+                    
+                    <dt class="col-sm-3">Tipo:</dt>
+                    <dd class="col-sm-9">
+                        {% if product.type == 'product' %}
+                            <span class="badge bg-info">Producto</span>
+                        {% else %}
+                            <span class="badge bg-warning">Servicio</span>
+                        {% endif %}
+                    </dd>
+                    
+                    <dt class="col-sm-3">Precio:</dt>
+                    <dd class="col-sm-9">${{ product.price|floatformat:2 }}</dd>
+                    
+                    <dt class="col-sm-3">Unidad de medida:</dt>
+                    <dd class="col-sm-9">{{ product.unit_of_measure }}</dd>
+                    
+                    {% if product.description %}
+                        <dt class="col-sm-3">Descripción:</dt>
+                        <dd class="col-sm-9">{{ product.description|linebreaks }}</dd>
+                    {% endif %}
+                    
+                    <dt class="col-sm-3">Fecha de creación:</dt>
+                    <dd class="col-sm-9">{{ product.created_at|date:"d/m/Y H:i" }}</dd>
+                    
+                    {% if product.created_by %}
+                        <dt class="col-sm-3">Creado por:</dt>
+                        <dd class="col-sm-9">{{ product.created_by.get_full_name|default:product.created_by.username }}</dd>
+                    {% endif %}
+                </dl>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'products:list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+                <a href="{% url 'products:update' product.pk %}" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> Editar
+                </a>
+                <a href="{% url 'products:delete' product.pk %}" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Eliminar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
