@@ -3,12 +3,8 @@
 <head>
     <script>
         (function() {
-            var theme = localStorage.getItem('bs-theme');
-            if (theme === 'dark' || theme === 'light') {
-                document.documentElement.setAttribute('data-bs-theme', theme);
-            } else {
-                document.documentElement.setAttribute('data-bs-theme', 'light');
-            }
+            const theme = localStorage.getItem('bs-theme') || 'light';
+            document.documentElement.setAttribute('data-bs-theme', theme);
         })();
     </script>
     <meta charset="UTF-8">
@@ -1155,7 +1151,7 @@
                 theme = theme === 'dark' ? 'dark' : 'light';
                 document.documentElement.setAttribute('data-bs-theme', theme);
                 localStorage.setItem('bs-theme', theme);
-                window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: theme } }));
+                window.dispatchEvent(new Event('themechange'));
             }
             document.addEventListener('DOMContentLoaded', function() {
                 var btn = document.getElementById('theme-toggle');

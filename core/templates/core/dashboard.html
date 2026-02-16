@@ -152,7 +152,7 @@
     </div>
     <div class="col-lg-8">
         <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-0 pt-3 pb-2">
+            <div class="card-header bg-body border-0 pt-3 pb-2">
                 <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Ventas vs Compras ({{ period_label }})</h5>
                 <small class="text-muted">Totales diarios de operaciones confirmadas — montos en $ ARS</small>
             </div>
@@ -163,7 +163,7 @@
     </div>
     <div class="col-lg-4">
         <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-0 pt-3 pb-2">
+            <div class="card-header bg-body border-0 pt-3 pb-2">
                 <h5 class="mb-0"><i class="fas fa-user-tie me-2"></i>Top 5 Clientes</h5>
                 <small class="text-muted">Por volumen de ventas ($ ARS) — {{ period_label }}</small>
             </div>
@@ -318,8 +318,8 @@
     function getChartScaleColors() {
         var dark = isDarkTheme();
         return {
-            gridColor: dark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
-            tickColor: dark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(0, 0, 0, 0.7)'
+            gridColor: dark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
+            tickColor: dark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.75)'
         };
     }
 
